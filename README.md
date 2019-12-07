@@ -7,6 +7,6 @@
 
 ## Изисквания
 
-glfw >= 3.0
-opengl >= 3.3
-glibc >= 2.0
+* glfw >= 3.0
+* opengl >= 3.3
+* glibc >= 2.0
