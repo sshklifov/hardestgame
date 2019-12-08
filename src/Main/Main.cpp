@@ -173,12 +173,12 @@ void FindSolutionParallel()
 {
     clock_t then = clock();
 
-    int rnd[threads];
+    int rnd[threads+1];
 
     FILE* fp = fopen("/dev/random", "r");
     assert(fp);
-    int s = fread(&rnd, sizeof(int), threads, fp);
-    assert(s == threads);
+    int s = fread(&rnd, sizeof(int), threads+1, fp);
+    assert(s == threads+1);
     fclose(fp);
 
     ParallelPlanner planner(samples, threads, rnd);

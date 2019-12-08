@@ -3,32 +3,38 @@
 SUBDIRS=$(find . -maxdepth 1 -not -path . -type d)
 
 for d in $SUBDIRS; do
-    cd $d
-    make -f ../Modules.mk headers
-    cd ../
+    if [ ! -f $d/Makefile ]; then
+        cp ../Modules.mk $d/Makefile
+    fi
 done
 
-if [ "$1" == "h" ]; then
+for d in $SUBDIRS; do
+    cd $d
+    make headers
+    cd ..
+done
+
+if [ "$1" == "c" ]; then
+    for d in $SUBDIRS; do
+        cd $d
+        make clean
+        rm Makefile
+        cd ..
+    done
+    make -f ../GNUmakefile clean
     exit
 fi
 
 if [ "$1" == "f" ]; then
     opt="-B"
 fi
-
 for d in $SUBDIRS; do
     cd $d
-
-    make $opt -f ../Modules.mk objs
+    make $opt objs
     if [ $? != 0 ] ; then
         exit
     fi
-
-    cd ../
+    cd ..
 done
 
-if [ "$1" == "o" ]; then
-    exit
-fi
-
-make
+make -f ../GNUmakefile

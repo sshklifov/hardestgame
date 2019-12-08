@@ -13,7 +13,9 @@ const int enemyRad = 12;
 
 const int checkerLen = 45;
 
-const int playerSpeed = 2;
+// playerSpeed==2 is the bare minimum
+// (playerSpeed==1 might as well not have a solution)
+const int playerSpeed = 3;
 const int enemySpeed = 6;
 
 struct IBox
