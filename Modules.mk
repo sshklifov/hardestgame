@@ -3,6 +3,7 @@ INCLUDEDIR=$(PREFIX)/include
 LIBDIR=$(PREFIX)/lib
 
 OPT=-Wall -Wextra -fmax-errors=1 -O2 -DNDEBUG
+#OPT=-Wall -Wextra -fmax-errors=1 -ggdb
 MACROS:=-I$(INCLUDEDIR)
 
 headerFiles:=$(wildcard *.h)
@@ -38,4 +39,4 @@ clean:
 	rm -f Makefile.bak
 
 depend: $(sourceFiles)
-	makedepend -I$(INCLUDEDIR) -p$(LIBDIR)/ -- $(OPT) $^ 2>/dev/null
+	makedepend -I$(INCLUDEDIR) -Y -p$(LIBDIR)/ -- $(OPT) $^ 2>/dev/null

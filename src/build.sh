@@ -14,6 +14,10 @@ for d in $SUBDIRS; do
     cd ..
 done
 
+if [ "$1" == "h" ]; then
+    exit
+fi
+
 if [ "$1" == "c" ]; then
     for d in $SUBDIRS; do
         cd $d

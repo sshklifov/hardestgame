@@ -11,7 +11,7 @@
 #include <cstring>
 
 const int samples = 200;
-const int threads = 8;
+const int threads = 10;
 
 static GLFWwindow* window;
 static Color* fb;
@@ -98,7 +98,7 @@ void InteractiveLoop()
         DrawLevel(fb);
         planner.ForEachPlayer([](const PlayerInfo& player)
         {
-            DrawPlayer(fb, player.pos);
+            DrawPlayer(fb, player.pos, player.dieIdx<0 ? 1.f : 0.5f);
         });
         for (const EnemyPath& e : LevelDscr::Get().enemies)
         {
@@ -109,7 +109,7 @@ void InteractiveLoop()
         glfwWaitEvents();
         if (!freeze)
         {
-            if (planner.NextGen()) break;;
+            if (planner.NextGen()) break;
         }
 
         if (doDraw)
@@ -118,7 +118,7 @@ void InteractiveLoop()
             std::vector<Direction> bestPlan;
             planner.ForEachPlayer([&bestDst, &bestPlan](const PlayerInfo& player)
             {
-                if (player.dst < bestDst && player.dieIdx<0)
+                if (player.dst < bestDst)// && player.dieIdx<0)
                 {
                     bestDst = player.dst;
                     bestPlan = player.plan;
@@ -146,7 +146,12 @@ void InteractiveLoop()
         }
         if (cont)
         {
+            clock_t then = clock();
             while (!planner.NextGen());
+            int elapsed = clock()-then;
+            double secs = (double)elapsed / CLOCKS_PER_SEC;
+            printf("%lf secs elapsed (single core)\n", secs);
+            
             break;
         }
     }

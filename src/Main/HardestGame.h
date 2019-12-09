@@ -16,7 +16,7 @@ const int checkerLen = 45;
 // playerSpeed==2 is the bare minimum
 // (playerSpeed==1 might as well not have a solution)
 const int playerSpeed = 3;
-const int enemySpeed = 6;
+const int enemySpeed = 7;
 
 struct IBox
 {
@@ -49,8 +49,8 @@ enum Direction
 struct EnemyPath
 {
     IPoint pos;
-    int minx;
-    int maxx;
+    int from;
+    int to;
     Direction dir;
 };
 

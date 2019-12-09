@@ -160,6 +160,8 @@ bool Planner::Simulate()
     assert(!FoundSol() && !Bricked());
 
     std::vector<EnemyPath> enemies = LevelDscr::Get().enemies;
+    std::vector<int> oldDieIdx (players.size());
+    for (int i = 0; i < (int)players.size(); ++i) oldDieIdx.push_back(players[i].dieIdx);
 
     int idx = 0;
     int rep = 0;
@@ -179,7 +181,7 @@ bool Planner::Simulate()
 
         for (int i = 0; i < (int)players.size(); ++i)
         {
-            if (players[i].dieIdx >= 0) continue;
+            if (players[i].dieIdx >= 0) continue; // or player wins -> continue
             for (const EnemyPath& e : enemies)
             {
                 if (PlayerDies(players[i].pos, e.pos))
@@ -211,10 +213,13 @@ bool Planner::Simulate()
         }
     }
 
-    for (PlayerInfo& player : players)
+    for (int i = 0; i < (int)players.size(); ++i)
     {
-        IPoint where = GetCenter(player.pos);
-        player.dst = DstToGoal(where.x, where.y);
+        IPoint where = GetCenter(players[i].pos);
+        players[i].dst = DstToGoal(where.x, where.y);
+        if (oldDieIdx[i]>=0 && players[i].dieIdx <= oldDieIdx[i]) ++players[i].dieCnt;
+        else if (oldDieIdx[i]<0 && players[i].dieIdx>=0) players[i].dieCnt = 1;
+        else players[i].dieCnt = 0;
     }
 
     return FoundSol();
@@ -276,7 +281,10 @@ void Planner::CrossOver(const PlayerInfo& dead, const PlayerInfo& alive, int cro
     int n = std::geometric_distribution<int>(0.5f)(gen) % (steps-from);
     int to = from+n;
 
+    // inherit player
     res.plan = dead.plan;
+    res.dieCnt = dead.dieCnt;
+
     for (int i = from; i <= to; ++i)
     {
         assert (i >= 0 && i < steps);
@@ -290,7 +298,9 @@ void Planner::Mutate(const PlayerInfo& player, PlayerInfo& mut, int lastIdx) con
 {
     assert(!FoundSol() && !Bricked());
 
+    // inherit player
     mut.plan = player.plan;
+    mut.dieCnt = mut.dieCnt;
 
     int mutIdx = lastIdx - std::geometric_distribution<int>(0.4f)(gen) % (lastIdx+1);
     Direction newdir = RandomOtherDirection(player.plan[mutIdx]);
@@ -366,6 +376,28 @@ int Planner::GenChildren(std::vector<PlayerInfo>& children, int nChildren)
     return nAlive;
 }
 
+void Planner::StripOld()
+{
+    //! Not worth the time it takes to compute
+
+    /* if ((int)players.size() <= samples) return; */
+
+    /* auto it = std::partition(players.begin(), players.end(), [](const PlayerInfo& info) */
+    /* { */
+    /*     const int threshold = repeatGeneration; */
+    /*     return info.dieCnt < threshold; */
+    /* }); */
+    /* int rem = it - players.begin(); */
+    /* if (rem!=(int)players.size()) */
+    /* { */
+    /*     int n = players.end()-it; */
+    /*     printf("%d players which do nothing:\n", n); */
+    /*     printf("%lf percent\n", (float)n/players.size()); */
+    /* } */
+    /* int newsiz = std::max(rem, samples); */
+    /* players.resize(newsiz); */
+}
+
 void Planner::StripBad()
 {
     // remove any exceess elements
@@ -386,8 +418,11 @@ void Planner::StripBad()
     int nDead = players.size()-nAlive;
     int toDelete = players.size()-samples;
 
+    const float minAliveFrac = 0.1;
     float r = (float)samples / players.size();
-    int delAlive = std::min(nAlive - (int)floor(r*nAlive), toDelete);
+    int delAlive = Clamp(nAlive - r*nAlive, 0.f, (float)toDelete);
+    if (nAlive-delAlive < minAliveFrac * players.size()) delAlive = 0;
+
     int delDead = toDelete-delAlive;
     assert(delAlive >= 0 && delDead >= 0);
     assert(delAlive <= nAlive && delDead <= nDead);
@@ -441,6 +476,8 @@ bool Planner::NextGen()
             for (int j = steps; j < newSteps; ++j)
             {
                 players[i].plan[j] = RandomDirection();
+                players[i].pruneProtect = 0;
+                /* players[i].dieCnt = 0; */
             }
         }
 
@@ -457,6 +494,7 @@ bool Planner::NextGen()
     if (Simulate()) return true;
 
     Prune(players, gen);
+    StripOld();
     StripBad();
     for (int i = 0; i < (int)players.size(); ++i)
     {

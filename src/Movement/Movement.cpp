@@ -200,24 +200,40 @@ bool AdvancePlayer(IBox& b, Direction d)
 
 void AdvanceEnemy(EnemyPath& p)
 {
-    assert (p.pos.x >= p.minx && p.pos.x <= p.maxx);
-
     if (p.dir == LEFT)
     {
         p.pos.x -= enemySpeed;
-        if (p.pos.x < p.minx)
+        if (p.pos.x < p.from)
         {
-            p.pos.x = p.minx + (p.minx-p.pos.x);
+            p.pos.x = p.from + (p.from-p.pos.x);
             p.dir = RIGHT;
         }
     }
-    else // p.dir == RIGHT
+    else if (p.dir == RIGHT)
     {
         p.pos.x += enemySpeed;
-        if (p.pos.x > p.maxx)
+        if (p.pos.x > p.to)
         {
-            p.pos.x = p.maxx - (p.pos.x-p.maxx);
+            p.pos.x = p.to - (p.pos.x-p.to);
             p.dir = LEFT;
+        }
+    }
+    else if (p.dir == UP)
+    {
+        p.pos.y += enemySpeed;
+        if (p.pos.y > p.to)
+        {
+            p.pos.y = p.to - (p.pos.y-p.to);
+            p.dir = DOWN;
+        }
+    }
+    else if (p.dir == DOWN)
+    {
+        p.pos.y -= enemySpeed;
+        if (p.pos.y < p.from)
+        {
+            p.pos.y = p.from + (p.from-p.pos.y);
+            p.dir = UP;
         }
     }
 }

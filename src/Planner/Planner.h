@@ -44,19 +44,21 @@ private:
     void CrossOver(const PlayerInfo& dead, const PlayerInfo& alive, int crossIdx, PlayerInfo& res) const;
     int GenChildren(std::vector<PlayerInfo>& res, int nChildren);
 
+    void StripOld();
     void StripBad();
 
 public:
     static const int incSteps = 4;
-    static const int maxSteps = 100;
+    static const int maxSteps = 200;
     static const int repeatGeneration = 30;
-    static const int percentPruneProtectOverride = 30;
+    static const int percentPruneProtectOverride = 25;
+    static const int pruneManhThreshold = playerSize/2;
 
     static const int lastMovesSize = 2*incSteps;
 
-    static const int pixelsPerMove = 30;
+    static const int pixelsPerMove = 20;
     static const int repeatMoves = pixelsPerMove / playerSpeed;
-    static_assert(playerSpeed* repeatMoves == pixelsPerMove, "precision loss");
+    /* static_assert(playerSpeed* repeatMoves == pixelsPerMove, "precision loss"); */
 
 private:
     mutable std::default_random_engine gen;
@@ -79,12 +81,13 @@ void Planner::ForEachPlayer(const Func& f) const
 struct PlayerInfo
 {
     PlayerInfo() :
-        pos(LevelDscr::Get().player), dieIdx(0), dst(INT_MAX), pruneProtect(0) {}
+        pos(LevelDscr::Get().player), dieIdx(0), dieCnt(0), dst(INT_MAX), pruneProtect(0) {}
 
     IBox pos;
     std::vector<Direction> plan;
     CArray<IPoint,Planner::lastMovesSize> lastpos;
     int dieIdx;
+    int dieCnt;
     int dst;
     bool pruneProtect;
 };

@@ -28,18 +28,17 @@ void Prune(std::vector<PlayerInfo>& players, URNG& gen, bool wantPart = 0)
         bool shouldRemove = false;
         for (int j = 0; j < i; ++j)
         {
-            if (players[i].pruneProtect)
-            {
-                int rnd = std::uniform_int_distribution<int>(1, 100)(gen);
-                if (rnd <= 100-Planner::percentPruneProtectOverride) continue;
-            }
-
             IPoint lhs = GetCenter(players[i].pos);
             IPoint rhs = GetCenter(players[j].pos);
 
             int manh = abs(lhs.x-rhs.x) + abs(lhs.y-rhs.y);
-            if (manh < 2*playerSize)
+            if (manh < Planner::pruneManhThreshold)
             {
+                if (players[i].pruneProtect)
+                {
+                    int rnd = std::uniform_int_distribution<int>(1, 100)(gen);
+                    if (rnd <= 100-Planner::percentPruneProtectOverride) continue;
+                }
                 shouldRemove = true;
                 break;
             }

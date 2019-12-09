@@ -3,6 +3,7 @@ LIBDIR=$(PREFIX)/lib
 objectFiles:=$(wildcard $(LIBDIR)/*.o)
 
 SYSTEM_LIBS=glfw3
+#OPT=-ggdb -ldl -lpthread
 OPT=-O2 -DNDEBUG -ldl -lpthread
 EXECUTABLE=hard
 
