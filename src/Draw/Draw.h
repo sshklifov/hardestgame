@@ -12,6 +12,6 @@ struct Color
 
 extern void DrawPlayer(Color* fb, const IBox& player, float red = 1.f);
 extern void DrawEnemy(Color* fb, IPoint p);
-extern void DrawLevel(Color* fb);
+extern void DrawLevel(Color* fb, const LevelDscr& = LevelDscr::Get());
 
 #endif

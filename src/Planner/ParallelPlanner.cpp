@@ -6,18 +6,19 @@
 
 void* ParallelPlanner::DoWork(void* context)
 {
-    Planner* worker = (Planner*)context;
-    bool change=false;
-    while (worker->generation < Planner::repeatGeneration && !change)
-    {
-        change = worker->NextGen();
-    }
-    if (change) return (void*)change;
+    /* Planner* worker = (Planner*)context; */
+    /* bool change=false; */
+    /* while (worker->generation < Planner::genPerStepInc && !change) */
+    /* { */
+    /*     change = worker->NextGen(); */
+    /* } */
+    /* if (change) return (void*)change; */
 
-    int oldSteps = worker->steps;
-    change = worker->NextGen();
-    assert(worker->steps > oldSteps);
-    return (void*)change;
+    /* int oldSteps = worker->steps; */
+    /* change = worker->NextGen(); */
+    /* assert(worker->steps > oldSteps); */
+    /* return (void*)change; */
+    return context;
 }
 
 ParallelPlanner::ParallelPlanner(int samples, int nthreads, int* seeds) :
@@ -36,8 +37,8 @@ bool ParallelPlanner::FoundSol() const
 
 const std::vector<Direction>& ParallelPlanner::SeeSol() const
 {
-    assert(FoundSol() && workers[workaholicIdx].FoundSol());
-    return workers[workaholicIdx].SeeSol();
+    assert(FoundSol() && workers[workaholicIdx].FoundSolution());
+    return workers[workaholicIdx].SeeSolution();
 }
 
 bool ParallelPlanner::Bricked() const
@@ -79,7 +80,7 @@ bool ParallelPlanner::NewGen()
 
         if ((bool)retval)
         {
-            if (workers[i].FoundSol() && !FoundSol())
+            if (workers[i].FoundSolution() && !FoundSol())
             {
                 workaholicIdx = i;
             }
@@ -95,13 +96,18 @@ bool ParallelPlanner::NewGen()
     {
         assert(workers[i].samples == samples);
 
-        workers[i].ForEachPlayer([&playerPool](const PlayerInfo& player)
+        for (int j = 0; j < (int)workers[i].players.size(); ++j)
         {
-            playerPool.push_back(player);
-        });
+            playerPool.push_back(std::move(workers[i].players[j]));
+        }
+        /* workers[i].ForEachPlayer([&playerPool](const PlayerInfo& player) */
+        /* { */
+        /*     playerPool.push_back(player); */
+        /* }); */
     }
 
-    Prune(playerPool, gen, 1);
+    // TODO jk
+    /* Prune(playerPool, gen, 1); */
     // randomly assign players to threads
     if ((int)playerPool.size() <= samples)
     {

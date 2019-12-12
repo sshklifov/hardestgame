@@ -2,8 +2,8 @@ PREFIX ?= ../..
 INCLUDEDIR=$(PREFIX)/include
 LIBDIR=$(PREFIX)/lib
 
-OPT=-Wall -Wextra -fmax-errors=1 -O2 -DNDEBUG
-#OPT=-Wall -Wextra -fmax-errors=1 -ggdb
+#OPT=-Wall -Wextra -fmax-errors=1 -O2 -DNDEBUG
+OPT=-Wall -Wextra -fmax-errors=1 -ggdb
 MACROS:=-I$(INCLUDEDIR)
 
 headerFiles:=$(wildcard *.h)

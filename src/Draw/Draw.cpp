@@ -138,17 +138,19 @@ void DrawEnemy(Color* fb, IPoint p)
     }
 }
 
-void DrawLevel(Color* fb)
+void DrawLevel(Color* fb, const LevelDscr& lvl)
 {
-    const LevelDscr& lvl = LevelDscr::Get();
-
     Clear(fb);
-    for (size_t i = 0; i < lvl.area.size(); ++i)
+
+    for (int i = 0; i < (int)lvl.area.size(); ++i)
     {
         if (i != lvl.startIdx && i != lvl.endIdx)
             DrawDangerzone(fb, lvl.area[i]);
     }
-    DrawSafezone(fb, lvl.area[lvl.startIdx]);
-    DrawSafezone(fb, lvl.area[lvl.endIdx]);
+    if (lvl.startIdx>=0 && lvl.startIdx<(int)lvl.area.size())
+        DrawSafezone(fb, lvl.area[lvl.startIdx]);
+    if (lvl.endIdx>=0 && lvl.endIdx<(int)lvl.area.size())
+        DrawSafezone(fb, lvl.area[lvl.endIdx]);
+
     Fill(fb, Color{0.5, 0.5f, 0.5f});
 }

@@ -12,7 +12,7 @@ class Planner;
 #include <climits>
 #include <random>
 
-struct PlayerInfo;
+class PlayerInfo;
 
 class Planner
 {
@@ -21,8 +21,8 @@ class Planner
 public:
     Planner(int samples, int seed);
 
-    bool FoundSol() const;
-    const std::vector<Direction>& SeeSol() const;
+    bool FoundSolution() const;
+    const std::vector<Direction>& SeeSolution() const;
     bool Bricked() const;
 
     bool NextGen();
@@ -31,34 +31,47 @@ public:
     void ForEachPlayer(const Func& f) const;
 
 private:
-    int GetUniformRandom(int a, int b) const;
-    Direction RandomDirection() const;
-    Direction RandomOtherDirection(Direction notThis) const;
-    std::vector<Direction> RandomPlan(int steps) const;
+    /* int GetUniformRandom(int a, int b) const; */
+    /* Direction RandomDirection() const; */
+    /* Direction RandomOtherDirection(Direction notThis) const; */
+    /* std::vector<Direction> RandomPlan(int steps) const; */
 
 private:
-    bool Simulate();
+    // TODO void somehow? (need pWinner) tho
+    static bool Simulation(PlayerInfo& player, int idx);
+    // below: u too buddy (and put ocnst)
+    static bool Inherit(const PlayerInfo& prnt, PlayerInfo& chld, int idx);
+    bool Mutate(const PlayerInfo& player, PlayerInfo& mut);
+    /* static void ReverseEng(PlayerInfo& player, int idx, int n); */
 
-    void Mutate(const PlayerInfo& player, PlayerInfo& mut, int lastIdx) const;
+private:
+    /* bool Simulate(); */
+    /* bool Simulate(PlayerInfo& player, int idx); */
+
     static int EvalMatch(const PlayerInfo& lhs, const PlayerInfo& rhs, int& crossIdx);
     void CrossOver(const PlayerInfo& dead, const PlayerInfo& alive, int crossIdx, PlayerInfo& res) const;
-    int GenChildren(std::vector<PlayerInfo>& res, int nChildren);
+    void GenChildren(std::vector<PlayerInfo>& res, int nChildren);
 
     void StripOld();
     void StripBad();
 
 public:
+    static constexpr const float playerMinAlive = 0.1f;
+
     static const int incSteps = 4;
+    static const int startSteps = 2*incSteps;
     static const int maxSteps = 200;
-    static const int repeatGeneration = 30;
+    static const int repeat = 30;
     static const int percentPruneProtectOverride = 25;
     static const int pruneManhThreshold = playerSize/2;
 
-    static const int lastMovesSize = 2*incSteps;
+    static const int genPerStepInc = 30;
+    static const int lastMovesSize = 2*incSteps; // TODO
 
-    static const int pixelsPerMove = 20;
-    static const int repeatMoves = pixelsPerMove / playerSpeed;
-    /* static_assert(playerSpeed* repeatMoves == pixelsPerMove, "precision loss"); */
+    static const int nRepeatMove = std::max(2, 20 / playerSpeed);
+    static const int pixelsPerMove = playerSpeed*nRepeatMove;
+
+    static_assert(pruneManhThreshold < nRepeatMove*pixelsPerMove, "no point in pruning");
 
 private:
     mutable std::default_random_engine gen;
@@ -66,7 +79,9 @@ private:
     int samples;
     int steps;
     int generation;
-    int solIdx;
+    /* const PlayerInfo* pWinner; */
+    std::vector<Direction> res;
+    /* int lastLocMinCheck = 0; */
 };
 
 template <typename Func>
@@ -78,18 +93,58 @@ void Planner::ForEachPlayer(const Func& f) const
     }
 }
 
-struct PlayerInfo
+class PlayerInfo
 {
-    PlayerInfo() :
-        pos(LevelDscr::Get().player), dieIdx(0), dieCnt(0), dst(INT_MAX), pruneProtect(0) {}
+    /* friend class Planner; // TODO REMOVE */
 
+public:
+    using URNG = std::default_random_engine;
+
+public:
+    PlayerInfo();
+    PlayerInfo(int steps, URNG& gen);
+
+public:
+    PlayerInfo(PlayerInfo&&) = default;
+    PlayerInfo& operator=(PlayerInfo&&) = default;
+
+public:
+    PlayerInfo(const PlayerInfo&) = default;
+    PlayerInfo& operator=(const PlayerInfo&) = default;
+
+public:
+    bool IsDead() const;
+    bool IsWinner() const;
+    bool HasNoPlan() const;
+    bool InsideLocalMin() const;
+
+    const std::vector<Direction> GetSolution() const;
+    const IBox& GetLastPos() const;
+
+    PlayerInfo Mutate(URNG& gen) const;
+    void IncreaseStep(int n, URNG& gen);
+
+public:
+    static const int staleThreshold = 2*Planner::genPerStepInc;
+    static const int performLocMinCheck = 2*staleThreshold;
+
+private:
+    void Simulation();
+    PlayerInfo Inherit(std::vector<Direction> plan, int changeIdx) const;
+
+public: // TODO
     IBox pos;
     std::vector<Direction> plan;
-    CArray<IPoint,Planner::lastMovesSize> lastpos;
-    int dieIdx;
-    int dieCnt;
+    std::vector<IPoint> lastpos;
     int dst;
-    bool pruneProtect;
+    mutable float stability = 1.0; // TODO!
+    int locMin;
+    int staleFactor;
+    /* int protection = 0; // TODO AS well */
+    /* bool IsAlive() const */
+    /* { */
+    /*     return plan.size() != lastpos.size(); */
+    /* } */
 };
 
 #endif

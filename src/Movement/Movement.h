@@ -3,8 +3,8 @@
 
 #include <HardestGame.h>
 
-extern bool AdvancePlayer(IBox& b, Direction d);
-extern void AdvanceEnemy(EnemyPath& p);
+extern void AdvancePlayer(IBox& b, Direction d, int times = 1);
+extern void AdvanceEnemy(EnemyPath& p, int times = 1);
 
 extern bool InsideField(int x, int y);
 extern bool PlayerWins(const IBox& player);

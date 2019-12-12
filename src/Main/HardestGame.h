@@ -18,16 +18,6 @@ const int checkerLen = 45;
 const int playerSpeed = 3;
 const int enemySpeed = 7;
 
-struct IBox
-{
-    IBox() = default;
-    IBox(int xmin, int xmax, int ymin, int ymax) :
-        xmin(xmin), xmax(xmax), ymin(ymin), ymax(ymax) {}
-
-    int xmin, xmax;
-    int ymin, ymax;
-};
-
 struct IPoint
 {
     IPoint() = default;
@@ -37,13 +27,27 @@ struct IPoint
     int y;
 };
 
+struct IBox
+{
+    IBox() = default;
+    IBox(int xmin, int xmax, int ymin, int ymax) :
+        xmin(xmin), xmax(xmax), ymin(ymin), ymax(ymax)
+    {}
+    IBox(IPoint pmin, IPoint pmax) :
+        xmin(pmin.x), xmax(pmax.x), ymin(pmin.y), ymax(pmax.y)
+    {}
+
+    int xmin, xmax;
+    int ymin, ymax;
+};
+
 enum Direction
 {
-    NONE =  0b0000,
-    UP =    0b0001,
-    DOWN =  0b0010,
-    LEFT =  0b0100,
-    RIGHT = 0b1000
+    UP =    0b00001,
+    DOWN =  0b00010,
+    LEFT =  0b00100,
+    RIGHT = 0b01000,
+    NONE =  0b10000,
 };
 
 struct EnemyPath
@@ -52,13 +56,18 @@ struct EnemyPath
     int from;
     int to;
     Direction dir;
+
+    EnemyPath() = default;
+    EnemyPath(int xpos, int ypos, int from, int to, Direction dir) :
+        pos(xpos, ypos), from(from), to(to), dir(dir)
+    {}
 };
 
 struct LevelDscr
 {
     std::vector<IBox> area;
-    size_t startIdx;
-    size_t endIdx;
+    int startIdx;
+    int endIdx;
     std::vector<EnemyPath> enemies;
     IBox player;
 

@@ -1,21 +1,25 @@
 #include "Planner.h"
 #include <algorithm> // partition
+#include <Movement.h> // Clamp
 
-static IPoint GetCenter(const IBox& b)
-{
-    return IPoint{(b.xmin+b.xmax) / 2, (b.ymin+b.ymax) / 2};
-}
+// PlannerUtility.cpp
+extern IPoint GetCenter(const IBox& b);
 
 template <typename URNG>
-void Prune(std::vector<PlayerInfo>& players, URNG& gen, bool wantPart = 0)
+void Prune(std::vector<PlayerInfo>& players, URNG& , bool wantPart = 0)
 {
+    // TODO
+    if (players.size() < 200) return;
+
     // Partition so as to prioritize dead players for pruning
     if (wantPart)
     {
         std::partition(players.begin(), players.end(),
             [](const PlayerInfo& info)
             {
-                return info.dieIdx<0;
+                /* return info.dieIdx<0; */
+                return info.IsDead();
+                // TODO
             });
     }
 
@@ -28,17 +32,22 @@ void Prune(std::vector<PlayerInfo>& players, URNG& gen, bool wantPart = 0)
         bool shouldRemove = false;
         for (int j = 0; j < i; ++j)
         {
-            IPoint lhs = GetCenter(players[i].pos);
-            IPoint rhs = GetCenter(players[j].pos);
+            IPoint lhs = GetCenter(players[i].GetLastPos());
+            IPoint rhs = GetCenter(players[j].GetLastPos());
 
             int manh = abs(lhs.x-rhs.x) + abs(lhs.y-rhs.y);
-            if (manh < Planner::pruneManhThreshold)
+            /* const int minThreshold = playerSize / 2; */
+            /* const int maxThreshold = 3*playerSize; */
+            /* float t = Clamp(players[0].plan.size() / 50.f, 0.f, 1.f); */
+            /* int threshold = maxThreshold - (maxThreshold-minThreshold)*t*t; */
+            if (manh < Planner::nRepeatMove*playerSpeed*0.8)
+            /* if (manh < threshold) */
             {
-                if (players[i].pruneProtect)
-                {
-                    int rnd = std::uniform_int_distribution<int>(1, 100)(gen);
-                    if (rnd <= 100-Planner::percentPruneProtectOverride) continue;
-                }
+                /* if (players[i].pruneProtect) */
+                /* { */
+                /*     int rnd = std::uniform_int_distribution<int>(1, 100)(gen); */
+                /*     if (rnd <= 100-Planner::percentPruneProtectOverride) continue; */
+                /* } */
                 shouldRemove = true;
                 break;
             }

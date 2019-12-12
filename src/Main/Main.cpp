@@ -10,6 +10,9 @@
 #include <ctime>
 #include <cstring>
 
+// LevelEditor.cpp
+extern void LevelEditor();
+
 const int samples = 200;
 const int threads = 10;
 
@@ -78,8 +81,8 @@ void ShowPlan(const std::vector<Direction>& plan)
             if (PlayerDies(player, e.pos)) dead=true;
         }
 
-        idx += (rep+1) / Planner::repeatMoves;
-        rep = (rep+1) % Planner::repeatMoves;
+        idx += (rep+1) / Planner::nRepeatMove;
+        rep = (rep+1) % Planner::nRepeatMove;
     }
 }
 
@@ -92,13 +95,20 @@ void InteractiveLoop()
     InitializeGL();
 
     int rnd = time(NULL);
+    // fixed
+    rnd = 1576017494;
+    printf("seed:%d\n", rnd);
     Planner planner(samples, rnd);
     while(!glfwWindowShouldClose(window))
     {
         DrawLevel(fb);
         planner.ForEachPlayer([](const PlayerInfo& player)
         {
-            DrawPlayer(fb, player.pos, player.dieIdx<0 ? 1.f : 0.5f);
+            /* DrawPlayer(fb, player.pos, player.dieIdx<0 ? 1.f : 0.5f); */
+            /* DrawPlayer(fb, player.GetLastPos(), Clamp((float)player.staleFactor/PlayerInfo::staleThreshold, 0.f, 1.f)); */
+            DrawPlayer(fb, player.GetLastPos(), player.stability);
+            /* DrawPlayer(fb, player.GetLastPos(), Clamp((float)player.protection/30, 0.f, 1.f)); */
+            // TODO
         });
         for (const EnemyPath& e : LevelDscr::Get().enemies)
         {
@@ -156,15 +166,15 @@ void InteractiveLoop()
         }
     }
 
-    if (planner.FoundSol())
+    if (planner.FoundSolution())
     {
-        int siz = planner.SeeSol().size() * Planner::pixelsPerMove;
+        int siz = planner.SeeSolution().size() * Planner::pixelsPerMove;
         printf("solution length (in pixels): %d\n", siz);
 
         doDraw = true;
         while(!glfwWindowShouldClose(window) && doDraw)
         {
-            ShowPlan(planner.SeeSol());
+            ShowPlan(planner.SeeSolution());
         }
     }
     else
@@ -233,6 +243,11 @@ int main(int argc, char** argv)
         FindSolutionParallel();
         return 0;
     }
+    if (argc == 2 && strcmp(argv[1], "e") == 0)
+    {
+        LevelEditor();
+        return 0;
+    }
 
     printf("usage: ./dr OPTION\n");
     printf("i: interactive mode\n");
@@ -241,5 +256,6 @@ int main(int argc, char** argv)
     printf("\tpress g to visualize the best player (toggle)\n");
     printf("\tpress c to continue to solution (or lack thereof)\n");
     printf("p: parallel mode\n");
+    printf("e: editor mode\n");
     return 1;
 }

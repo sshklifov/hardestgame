@@ -164,7 +164,7 @@ static int MaxAdvance(const IBox& b, Direction d)
     }
 }
 
-bool AdvancePlayer(IBox& b, Direction d)
+void AdvancePlayer(IBox& b, Direction d, int times)
 {
     assert(b.xmin >= 0 && b.xmax < width);
     assert(b.ymin >= 0 && b.ymax < height);
@@ -173,16 +173,16 @@ bool AdvancePlayer(IBox& b, Direction d)
     switch (d)
     {
     case UP:
-        dy = std::min(MaxAdvance(b, d), playerSpeed);
+        dy = std::min(MaxAdvance(b, d), playerSpeed*times);
         break;
     case DOWN:
-        dy = -std::min(MaxAdvance(b, d), playerSpeed);
+        dy = -std::min(MaxAdvance(b, d), playerSpeed*times);
         break;
     case LEFT:
-        dx = -std::min(MaxAdvance(b, d), playerSpeed);
+        dx = -std::min(MaxAdvance(b, d), playerSpeed*times);
         break;
     case RIGHT:
-        dx = std::min(MaxAdvance(b, d), playerSpeed);
+        dx = std::min(MaxAdvance(b, d), playerSpeed*times);
         break;
     case NONE:
         break;
@@ -194,16 +194,14 @@ bool AdvancePlayer(IBox& b, Direction d)
     b.xmax += dx;
     b.ymin += dy;
     b.ymax += dy;
-
-    return dx==0 && dy==0;
 }
 
-void AdvanceEnemy(EnemyPath& p)
+static void _AdvanceEnemy(EnemyPath& p)
 {
     if (p.dir == LEFT)
     {
         p.pos.x -= enemySpeed;
-        if (p.pos.x < p.from)
+        if (p.pos.x <= p.from)
         {
             p.pos.x = p.from + (p.from-p.pos.x);
             p.dir = RIGHT;
@@ -212,7 +210,7 @@ void AdvanceEnemy(EnemyPath& p)
     else if (p.dir == RIGHT)
     {
         p.pos.x += enemySpeed;
-        if (p.pos.x > p.to)
+        if (p.pos.x >= p.to)
         {
             p.pos.x = p.to - (p.pos.x-p.to);
             p.dir = LEFT;
@@ -221,7 +219,7 @@ void AdvanceEnemy(EnemyPath& p)
     else if (p.dir == UP)
     {
         p.pos.y += enemySpeed;
-        if (p.pos.y > p.to)
+        if (p.pos.y >= p.to)
         {
             p.pos.y = p.to - (p.pos.y-p.to);
             p.dir = DOWN;
@@ -230,12 +228,97 @@ void AdvanceEnemy(EnemyPath& p)
     else if (p.dir == DOWN)
     {
         p.pos.y -= enemySpeed;
-        if (p.pos.y < p.from)
+        if (p.pos.y <= p.from)
         {
             p.pos.y = p.from + (p.from-p.pos.y);
             p.dir = UP;
         }
     }
+}
+
+void AdvanceEnemy(EnemyPath& e, int times)
+{
+    if (times==0) return;
+#if 0
+    EnemyPath _save = e;
+    EnemyPath _e = e;
+    for (int i = 0; i < times; ++i) _AdvanceEnemy(_e);
+#endif
+
+    int px = times*enemySpeed;
+    int halfStates = e.to-e.from;
+    int states = 2*halfStates;
+
+    if (e.dir == LEFT)
+    {
+        assert(e.pos.x >= e.from && e.pos.x <= e.to);
+        int offset = e.pos.x-e.from;
+        int state = (-states + offset - px) % states;
+        if (state > -halfStates)
+        {
+            e.dir = RIGHT;
+            e.pos.x = e.from + (-state);
+        }
+        else
+        {
+            e.dir = LEFT;
+            e.pos.x = e.to - (-halfStates-state);
+        }
+    }
+    else if (e.dir == RIGHT)
+    {
+        assert(e.pos.x >= e.from && e.pos.x <= e.to);
+        int offset = e.pos.x-e.from;
+        int state = (offset + px) % states;
+        if (state < halfStates)
+        {
+            e.dir = RIGHT;
+            e.pos.x = e.from + state;
+        }
+        else
+        {
+            e.dir = LEFT;
+            e.pos.x = e.to - (state-halfStates);
+        }
+    }
+    else if (e.dir == DOWN)
+    {
+        assert(e.pos.y >= e.from && e.pos.y <= e.to);
+        int offset = e.pos.y-e.from;
+        int state = (-states + offset - px) % states;
+        if (state >= -halfStates)
+        {
+            e.dir = UP;
+            e.pos.y = e.from + (-state);
+        }
+        else
+        {
+            e.dir = DOWN;
+            e.pos.y = e.to - (-halfStates-state);
+        }
+    }
+    else if (e.dir == UP)
+    {
+        assert(e.pos.y >= e.from && e.pos.y <= e.to);
+        int offset = e.pos.y-e.from;
+        int state = (offset + px) % states;
+        if (state < halfStates)
+        {
+            e.dir = UP;
+            e.pos.y = e.from + state;
+        }
+        else
+        {
+            e.dir = DOWN;
+            e.pos.y = e.to - (state-halfStates);
+        }
+    }
+
+#if 0
+    assert (e.dir == _e.dir);
+    assert (e.pos.x == _e.pos.x);
+    assert (e.pos.y == _e.pos.y);
+#endif
 }
 
 bool PlayerWins(const IBox& player)
