@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <ctime>
 #include <cstring>
+#include <cassert>
 
 // LevelEditor.cpp
 extern void LevelEditor();
@@ -104,11 +105,7 @@ void InteractiveLoop()
         DrawLevel(fb);
         planner.ForEachPlayer([](const PlayerInfo& player)
         {
-            /* DrawPlayer(fb, player.pos, player.dieIdx<0 ? 1.f : 0.5f); */
-            /* DrawPlayer(fb, player.GetLastPos(), Clamp((float)player.staleFactor/PlayerInfo::staleThreshold, 0.f, 1.f)); */
-            DrawPlayer(fb, player.GetLastPos(), player.stability);
-            /* DrawPlayer(fb, player.GetLastPos(), Clamp((float)player.protection/30, 0.f, 1.f)); */
-            // TODO
+            DrawPlayer(fb, player.pos, player.IsDead() ? 0.3f : 1.0f);
         });
         for (const EnemyPath& e : LevelDscr::Get().enemies)
         {
@@ -128,7 +125,7 @@ void InteractiveLoop()
             std::vector<Direction> bestPlan;
             planner.ForEachPlayer([&bestDst, &bestPlan](const PlayerInfo& player)
             {
-                if (player.dst < bestDst)// && player.dieIdx<0)
+                if (player.dst < bestDst)
                 {
                     bestDst = player.dst;
                     bestPlan = player.plan;
@@ -186,6 +183,9 @@ void InteractiveLoop()
 
 void FindSolutionParallel()
 {
+    fprintf(stderr, "regular planner not finished!\n");
+    exit(1);
+
     clock_t then = clock();
 
     int rnd[threads+1];

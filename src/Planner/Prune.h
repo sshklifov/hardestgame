@@ -1,6 +1,6 @@
 #include "Planner.h"
-#include <algorithm> // partition
-#include <Movement.h> // Clamp
+#include <algorithm>
+#include <Movement.h>
 
 // PlannerUtility.cpp
 extern IPoint GetCenter(const IBox& b);
@@ -8,7 +8,7 @@ extern IPoint GetCenter(const IBox& b);
 template <typename URNG>
 void Prune(std::vector<PlayerInfo>& players, URNG& , bool wantPart = 0)
 {
-    // TODO
+    // TODO place a parameter here
     if (players.size() < 200) return;
 
     // Partition so as to prioritize dead players for pruning
@@ -17,9 +17,7 @@ void Prune(std::vector<PlayerInfo>& players, URNG& , bool wantPart = 0)
         std::partition(players.begin(), players.end(),
             [](const PlayerInfo& info)
             {
-                /* return info.dieIdx<0; */
                 return info.IsDead();
-                // TODO
             });
     }
 
@@ -36,32 +34,17 @@ void Prune(std::vector<PlayerInfo>& players, URNG& , bool wantPart = 0)
             IPoint rhs = GetCenter(players[j].GetLastPos());
 
             int manh = abs(lhs.x-rhs.x) + abs(lhs.y-rhs.y);
-            /* const int minThreshold = playerSize / 2; */
-            /* const int maxThreshold = 3*playerSize; */
-            /* float t = Clamp(players[0].plan.size() / 50.f, 0.f, 1.f); */
-            /* int threshold = maxThreshold - (maxThreshold-minThreshold)*t*t; */
             if (manh < Planner::nRepeatMove*playerSpeed*0.8)
-            /* if (manh < threshold) */
             {
-                /* if (players[i].pruneProtect) */
-                /* { */
-                /*     int rnd = std::uniform_int_distribution<int>(1, 100)(gen); */
-                /*     if (rnd <= 100-Planner::percentPruneProtectOverride) continue; */
-                /* } */
                 shouldRemove = true;
                 break;
             }
         }
-
         if (shouldRemove)
         {
             std::swap(players[i], players[eraseAfter]);
             --eraseAfter;
         }
     }
-
-    if (eraseAfter < (int)players.size()-1)
-    {
-        players.erase(players.begin()+eraseAfter+1, players.end());
-    }
+    players.erase(players.begin()+eraseAfter+1, players.end());
 }

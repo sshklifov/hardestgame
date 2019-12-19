@@ -4,6 +4,7 @@
 
 #include <memory>
 #include <queue>
+#include <cassert>
 
 Direction RandomDirection(PlayerInfo::URNG& gen)
 {
@@ -14,7 +15,7 @@ Direction RandomDirection(PlayerInfo::URNG& gen)
 Direction RandomOtherDirection(PlayerInfo::URNG& gen, Direction notThis)
 {
     const Direction order[] = {LEFT, RIGHT, UP, DOWN, NONE};
-    int n = sizeof(order) / sizeof(Direction);
+    const int n = std::extent<decltype(order)>::value;
 
     int idx = -1;
     switch (notThis)
@@ -39,17 +40,6 @@ Direction RandomOtherDirection(PlayerInfo::URNG& gen, Direction notThis)
     int offset = std::uniform_int_distribution<int>(1, n-1)(gen);
     int resIdx = (idx+offset) % n;
     return order[resIdx];
-    /* int moves[5]; */
-    /* int n = 0; */
-    /* for (int bit = 0; bit < 5; ++bit) */
-    /* { */
-    /*     if (!(notMask&(1<<bit))) */
-    /*     { */
-    /*         moves[n++] = (1<<bit); */
-    /*     } */
-    /* } */
-    /* int offset = std::uniform_int_distribution<int>(1, n-1)(gen); */
-    /* return Direction(moves[offset]); */
 }
 
 std::vector<Direction> RandomPlan(PlayerInfo::URNG& gen, int steps)
@@ -69,8 +59,7 @@ IPoint GetCenter(const IBox& b)
     return IPoint{(b.xmin+b.xmax) / 2, (b.ymin+b.ymax) / 2};
 }
 
-// used in function below
-static std::vector<int>* CalculateDst()
+static std::vector<int>* CalculateDst(int boxIdx)
 {
     std::unique_ptr<std::vector<int>[]> dst;
     dst.reset(new std::vector<int>[width]);
@@ -80,12 +69,12 @@ static std::vector<int>* CalculateDst()
     }
 
     std::queue<IPoint> q;
-    const IBox& end = LevelDscr::Get().area[LevelDscr::Get().endIdx];
-    for (int y = end.ymin; y <= end.ymax; ++y)
+    const IBox& box = LevelDscr::Get().area[boxIdx];
+    for (int y = box.ymin; y <= box.ymax; ++y)
     {
-        for (int x = end.xmin; x <= end.xmax; ++x)
+        for (int x = box.xmin; x <= box.xmax; ++x)
         {
-            if (x==end.xmin || x==end.xmax || y==end.ymin || y==end.ymax)
+            if (x==box.xmin || x==box.xmax || y==box.ymin || y==box.ymax)
                 q.emplace(x, y);
             dst[x][y] = 0;
         }
@@ -114,21 +103,20 @@ static std::vector<int>* CalculateDst()
     return dst.release();
 }
 
-// returns the distance to the goal in pixels
 int DstToGoal(int x, int y)
 {
-    static std::unique_ptr<std::vector<int>[]> dst (CalculateDst());
+    static std::unique_ptr<std::vector<int>[]> dst
+        (CalculateDst(LevelDscr::Get().endIdx));
+
     assert (x >= 0 && x < width && y>=0 && y<height);
     return dst[x][y];
 }
 
-// heuristic for determining how close points are. if two points are
-// close, but there is a wall between them, they are not actually close.
-// equivalently, two points may be equally close to the goal, yet very
-// far apart. this is why we use both to arrivate at an approximation.
-/* static int DstHeuristic(const IPoint& lhs, const IPoint& rhs) */
-/* { */
-/*     int manh = abs(lhs.x-rhs.x) + abs(lhs.y-rhs.y); */
-/*     int ddst = abs(DstToGoal(lhs.x, lhs.y) - DstToGoal(rhs.x, rhs.y)); */
-/*     return std::max(manh, ddst); */
-/* } */
+int DstFromStart(int x, int y)
+{
+    static std::unique_ptr<std::vector<int>[]> dst
+        (CalculateDst(LevelDscr::Get().startIdx));
+
+    assert (x >= 0 && x < width && y>=0 && y<height);
+    return dst[x][y];
+}

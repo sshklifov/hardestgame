@@ -13,8 +13,6 @@ const int enemyRad = 12;
 
 const int checkerLen = 45;
 
-// playerSpeed==2 is the bare minimum
-// (playerSpeed==1 might as well not have a solution)
 const int playerSpeed = 3;
 const int enemySpeed = 7;
 
@@ -52,15 +50,15 @@ enum Direction
 
 struct EnemyPath
 {
-    IPoint pos;
-    int from;
-    int to;
-    Direction dir;
-
     EnemyPath() = default;
     EnemyPath(int xpos, int ypos, int from, int to, Direction dir) :
         pos(xpos, ypos), from(from), to(to), dir(dir)
     {}
+
+    IPoint pos;
+    int from;
+    int to;
+    Direction dir;
 };
 
 struct LevelDscr

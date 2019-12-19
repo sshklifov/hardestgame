@@ -2,7 +2,8 @@
 #include "Prune.h"
 
 #include <pthread.h>
-#include <algorithm> // shuffle, partition
+#include <algorithm>
+#include <cassert>
 
 void* ParallelPlanner::DoWork(void* context)
 {

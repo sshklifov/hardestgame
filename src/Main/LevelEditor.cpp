@@ -98,7 +98,7 @@ static void KeyCallback(GLFWwindow* window, int key, int, int action, int mods)
         if (lvl.startIdx<0) lvl.startIdx=lvl.area.size()-1;
         usingStart=true;
     }
-    if (key == GLFW_KEY_E && action == GLFW_PRESS)
+    if (key == GLFW_KEY_F && action == GLFW_PRESS)
     {
         if (lvl.endIdx<0) lvl.endIdx=lvl.area.size()-1;
         usingStart=false;
@@ -250,7 +250,7 @@ static void KeyCallback(GLFWwindow* window, int key, int, int action, int mods)
 
         fputs("Name of level: ", stdout);
         char buf[32];
-        scanf("%s", buf+strlen(buf));
+        scanf("%s", buf);
 
         char filename[64];
         snprintf(filename, 64, "../etc/%s.inl", buf);
@@ -281,11 +281,21 @@ static void KeyCallback(GLFWwindow* window, int key, int, int action, int mods)
                     lvl.enemies[i].from, lvl.enemies[i].to,
                     lvl.enemies[i].dir);
         }
-        fprintf(fp, "lvl.player=IBox(%d, %d, %d, %d);\n",
-                lvl.player.xmin, lvl.player.xmax,
-                lvl.player.ymin, lvl.player.ymax);
+
+        int posx = (lvl.player.xmax+lvl.player.xmin) / 2;
+        int posy = (lvl.player.ymax+lvl.player.ymin) / 2;
+        fprintf(fp, "lvl.player=IBox(%d-playerRad, %d+playerRad, %d-playerRad, %d+playerRad);\n",
+                posx, posx, posy, posy);
         fprintf(fp, "return lvl;\n}\n");
         fclose(fp);
+    }
+    if (key == GLFW_KEY_E && action == GLFW_PRESS)
+    {
+        if (!undo.empty())
+        {
+            fprintf(stderr, "you have an unfinished level\n");
+        }
+        else lvl = LevelDscr::Get();
     }
 }
 

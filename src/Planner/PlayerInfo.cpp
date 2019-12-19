@@ -1,5 +1,6 @@
 #include "Planner.h"
 #include <Movement.h>
+#include <cassert>
 
 // PlannerUtility.cpp
 extern Direction RandomDirection(PlayerInfo::URNG& gen);
@@ -46,14 +47,12 @@ const IBox& PlayerInfo::GetLastPos() const
 PlayerInfo PlayerInfo::Mutate(URNG& gen) const
 {
     assert(!HasNoPlan());
-    // USE LOCAL STABILITY
-    float stability = std::min((float)staleFactor / staleThreshold, 1.f);
-    const int tooFresh = 5;
-    if (staleFactor<=tooFresh) stability = 1.f;
 
-    // TODO
-    stability = 0.9f;
-    this->stability = stability;
+    // TODO simulated annealing
+    this->stability = 1.f;
+    /* float stability = std::min((float)staleFactor / staleThreshold, 1.f); */
+    /* const int tooFresh = 5; */
+    /* if (staleFactor<=tooFresh) stability = 1.f; */
 
     int lastIdx;
     if (IsDead())
@@ -65,25 +64,12 @@ PlayerInfo PlayerInfo::Mutate(URNG& gen) const
         lastIdx = plan.size()-1;
     }
 
-    int mutIdx;
-    int n;
-    /* int n; */
-    /* if (staleFactor <= 0.1) */
-    /* { */
-    /*     stability = 1.0f; */
-    /*     n = -1; */
-    /* } */
-    /* else */
-    /* { */
-
-    /* } */
-    /* else */
-    {
-        const float offsetScale = 0.3f;
-        mutIdx = lastIdx - std::geometric_distribution<int>(stability*offsetScale)(gen)%(lastIdx+1);
-        const float nScale = 0.4f;
-        n = mutIdx + std::geometric_distribution<int>(stability*nScale)(gen) % Planner::incSteps;
-    }
+    const float offsetScale = 0.3f;
+    int mutIdx = lastIdx -
+        std::geometric_distribution<int>(stability*offsetScale)(gen)%(lastIdx+1);
+    const float nScale = 0.4f;
+    int n = mutIdx +
+        std::geometric_distribution<int>(stability*nScale)(gen) % Planner::incSteps;
     n = std::min((int)plan.size(), n);
 
     Direction newDir = RandomOtherDirection(gen, plan[mutIdx]);
@@ -187,30 +173,29 @@ void PlayerInfo::Simulation()
 
     IPoint where = GetCenter(pos);
     dst = DstToGoal(where.x, where.y);
-    if (dst<locMin-playerRad || (locMin/playerRad<4 && dst<locMin))
+    // IDEA: -abs(where.x - lastpos[0].x)-abs(where.y - lastpos[0].y);
+    if (dst<locMin-playerRad) // TODO
     {
-        /* locMin = std::min(dst, locMin); */
         locMin = dst;
         staleFactor=0;
     }
-    else
-    {
-        /* printf("%d loc min\n", dst); */
-        ++staleFactor;
-    }
+    else ++staleFactor;
 }
 
-PlayerInfo::PlayerInfo() : pos(-100, -100, -100, -100), locMin(INT_MAX)
+PlayerInfo::PlayerInfo() : pos(-100, -100, -100, -100), dst(INT_MAX),
+    locMin(INT_MAX), staleFactor(0)
 {
+    // stability?
+    // TODO: rename staleFactor -> staleCounter
     // try to render -> assert fail
 }
 
-PlayerInfo::PlayerInfo(int steps, URNG& gen) : PlayerInfo() // TODO
+PlayerInfo::PlayerInfo(int steps, URNG& gen) : PlayerInfo()
 {
-    /* IncreaseStep(steps, gen); */
-    plan = RandomPlan(gen, steps);
+    IncreaseStep(steps, gen);
+    /* plan = RandomPlan(gen, steps); */
     /* pos = LevelDscr::Get().player; */
-    Simulation();
+    /* Simulation(); */
 }
 
 void PlayerInfo::IncreaseStep(int n, URNG& gen)
@@ -224,10 +209,5 @@ void PlayerInfo::IncreaseStep(int n, URNG& gen)
         plan[j] = RandomDirection(gen);
     }
 
-    /* const IPoint& p = lastpos.back(); */
-    /* pos = IBox(p.x-playerRad, p.x+playerRad, */
-    /*         p.y-playerRad, p.y+playerRad); */
-    /* Simulation(players[i], players[i].lastpos.size()); */
     Simulation();
-    /* assert(plan.size()>0); */
 }
