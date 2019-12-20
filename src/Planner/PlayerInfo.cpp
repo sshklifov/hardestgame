@@ -9,6 +9,12 @@ bool PlayerInfo::IsDead() const
     return lastpos.size() < plan.size();
 }
 
+bool PlayerInfo::IsAlive() const
+{
+    assert(!HasNoPlan());
+    return !IsDead();
+}
+
 bool PlayerInfo::IsWinner() const
 {
     assert(!HasNoPlan());
@@ -178,5 +184,5 @@ bool PlayerInfo::IsAwarded() const
 
 int PlayerInfo::GetFitness() const
 {
-    return -dst + IsAwarded()*awardBoost;
+    return -dst + IsAwarded()*awardBoost - IsDead()*deadPenalty;
 }

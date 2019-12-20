@@ -4,6 +4,7 @@
 #include <memory>
 #include <queue>
 #include <cassert>
+#include <algorithm>
 
 Direction RandomDirection(PlayerInfo::URNG& gen)
 {
@@ -120,16 +121,18 @@ int DstFromStart(int x, int y)
     return dst[x][y];
 }
 
-void Prune(std::vector<PlayerInfo>& players)
+void Prune(std::vector<PlayerInfo>& players, int maxPruned)
 {
-    // TODO place a parameter here
-    if (players.size() < 200) return;
-
-    // Partition so as to prioritize dead players for pruning
-    // TODO are they ordered?
+    if (maxPruned < 0) return;
+     
+    std::sort(players.begin(), players.end(),
+        [](const PlayerInfo& lhs, const PlayerInfo& rhs)
+        {
+            return lhs.GetFitness() > rhs.GetFitness();
+        });
 
     // for a few samples n^2 is as good as a sliding window solution
-    // also, points are not sparse
+    // also, points are not guaranteed to be sparse.
 
     int eraseAfter = players.size()-1;
     for (int i = players.size()-1; i >= 1; --i)
@@ -139,9 +142,9 @@ void Prune(std::vector<PlayerInfo>& players)
         {
             IPoint lhs = GetCenter(players[i].GetLastPos());
             IPoint rhs = GetCenter(players[j].GetLastPos());
-
             int manh = abs(lhs.x-rhs.x) + abs(lhs.y-rhs.y);
-            if (manh < Planner::nRepeatMove*playerSpeed*0.8)
+
+            if (manh < Planner::pruneDistance)
             {
                 shouldRemove = true;
                 break;
@@ -151,6 +154,9 @@ void Prune(std::vector<PlayerInfo>& players)
         {
             std::swap(players[i], players[eraseAfter]);
             --eraseAfter;
+
+            --maxPruned;
+            if (maxPruned <= 0) break;
         }
     }
     players.erase(players.begin()+eraseAfter+1, players.end());

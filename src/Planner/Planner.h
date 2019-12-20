@@ -29,7 +29,7 @@ public:
 
 private:
     void GenChildren(std::vector<PlayerInfo>& res, int nChildren);
-    void StripBad();
+    void Select();
 
 public:
     static constexpr const float minAliveFrac = 0.1f;
@@ -42,6 +42,8 @@ public:
 
     static const int nRepeatMove = std::max(2, 20 / playerSpeed);
     static const int pixelsPerMove = playerSpeed*nRepeatMove;
+
+    static const int pruneDistance = playerSize/2;
 
 private:
     mutable std::default_random_engine gen;
@@ -72,6 +74,7 @@ public:
     PlayerInfo(int steps, URNG& gen);
 
     bool IsDead() const;
+    bool IsAlive() const;
     bool IsWinner() const;
     bool HasNoPlan() const;
 
@@ -85,9 +88,6 @@ public:
     bool IsAwarded() const;
     int GetFitness() const;
 
-public:
-    static const int awardBoost = Planner::pixelsPerMove*Planner::incSteps * 10;
-
 private:
     void Simulation();
     PlayerInfo Inherit(std::vector<Direction> plan, int changeIdx) const;
@@ -98,6 +98,11 @@ public: // TODO (visualized in Main.cpp)
     std::vector<IPoint> lastpos;
     int dst;
     bool awarded;
+
+public:
+    static const int awardBoost = Planner::pixelsPerMove*Planner::incSteps * 10;
+    static const int deadPenalty = std::numeric_limits<int>::max() / 2;
+    static_assert(std::is_same<decltype(dst),int>::value, "kofti");
 };
 
 // circular include

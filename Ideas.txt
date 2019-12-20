@@ -8,9 +8,15 @@
 
 8. Variable plan sizes. This should handle in theory lucky mutations pretty well.
 
+9. Do not necessarily prune dead players. Change fitness function (?)
+
+10. Pruning is inefficient
+
 ---------------------------------------------------------------------------------------
 Outstanding:
 
 - Save solutions more elegantly
 
 6. Vary pruning parameter depending on the occasion (similar to 3).
+
+11. Decaying boost (not outright removing it)

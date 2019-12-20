@@ -58,19 +58,29 @@ void Planner::GenChildren(std::vector<PlayerInfo>& children, int nChildren)
     assert(idx==(int)children.size());
 }
 
-void Planner::StripBad()
+void Planner::Select()
 {
+    // Could be improved to 2 partial sorts + only one erase
+    // Commits up to 4341c43 did it this way. However, with small
+    // sample sizes, this does not make a lot of sense.
+
     assert(!FoundSolution() && !Bricked());
 
+    Prune(players, players.size() - samples);
     if ((int)players.size() <= samples) return;
 
-    auto it = std::partition(players.begin(), players.end(),
-        [](const PlayerInfo& info)
+    std::sort(players.begin(), players.end(),
+        [](const PlayerInfo& lhs, const PlayerInfo& rhs)
         {
-            return !info.IsDead();
+            return lhs.GetFitness() > rhs.GetFitness();
         });
-    int nAlive = it - players.begin();
+    auto it = std::partition_point(players.begin(), players.end(),
+        [](const PlayerInfo& player)
+        {
+            return player.IsAlive();
+        });
 
+    int nAlive = it - players.begin();
     int nDead = players.size()-nAlive;
     int toDelete = players.size()-samples;
 
@@ -82,22 +92,13 @@ void Planner::StripBad()
     assert(delAlive >= 0 && delDead >= 0);
     assert(delAlive <= nAlive && delDead <= nDead);
 
-    auto rstart = players.rend()-nAlive;
-    std::partial_sort(rstart, rstart+delAlive, rstart+nAlive,
-        [](const PlayerInfo& lhs, const PlayerInfo& rhs)
-        {
-            return lhs.GetFitness() < rhs.GetFitness();
-        });
-    auto start = players.begin()+nAlive;
-    std::partial_sort(start, start+delDead, start+nDead,
-        [](const PlayerInfo& lhs, const PlayerInfo& rhs)
-        {
-            return lhs.GetFitness() < rhs.GetFitness();
-        });
+    players.erase(players.end()-delDead, players.end());
 
-    assert(start-delAlive >= players.begin());
-    assert(start+delDead-1 <= players.end()-1);
-    players.erase(start-delAlive, start+delDead);
+    it = players.begin() + nAlive;
+    assert(it <= players.end());
+    players.erase(it-delAlive, it);
+
+    assert((int)players.size() >= samples-1 && (int)players.size() <= samples+1);
 }
 
 bool Planner::FoundSolution() const
@@ -136,8 +137,7 @@ bool Planner::NextGen()
         return Bricked() || FoundSolution();
     }
 
-    Prune(players);
-    StripBad();
+    Select();
 
     std::vector<PlayerInfo> children;
     GenChildren(children, samples);
