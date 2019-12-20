@@ -15,7 +15,7 @@
 extern void LevelEditor();
 
 const int samples = 200;
-const int threads = 10;
+const int threads = 5;
 
 static GLFWwindow* window;
 static Color* fb;
@@ -106,7 +106,7 @@ void InteractiveLoop()
         planner.ForEachPlayer([](const PlayerInfo& player)
         {
             /* DrawPlayer(fb, player.pos, player.IsDead() ? 0.3f : 1.0f); */
-            DrawPlayer(fb, player.GetLastPos(), player.IsAwarded() ? 1.f : 0.3f);
+            DrawPlayer(fb, player.GetLastPos(), !player.IsDead() ? 1.f : 0.3f);
         });
         for (const EnemyPath& e : LevelDscr::Get().enemies)
         {

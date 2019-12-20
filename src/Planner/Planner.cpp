@@ -74,9 +74,9 @@ void Planner::StripBad()
     int nDead = players.size()-nAlive;
     int toDelete = players.size()-samples;
 
-    float r = (float)samples / players.size();
-    int delAlive = Clamp(nAlive - r*nAlive, 0.f, (float)toDelete);
-    /* if (nAlive-delAlive < minAliveFrac * players.size()) delAlive = 0; */
+    float rat = (float)samples / players.size();
+    int delAlive = Clamp(nAlive * (1.f-rat), 0.f, (float)nAlive);
+    if (nAlive-delAlive < minAliveFrac * players.size()) delAlive = 0;
 
     int delDead = Clamp(toDelete-delAlive, 0, nDead);
     assert(delAlive >= 0 && delDead >= 0);

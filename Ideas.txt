@@ -4,15 +4,13 @@
 
 4. Make a good mt implementation.
 
-6. Vary pruning parameter depending on the occasion (similar to 3).
-
 7. Change explored in Planner to work on a block level (not pixel level)
+
+8. Variable plan sizes. This should handle in theory lucky mutations pretty well.
 
 ---------------------------------------------------------------------------------------
 Outstanding:
 
-1. Filter out the dead? Would this be a good idea?
+- Save solutions more elegantly
 
-2. Handle extreme cases (no alive players)
-
-3. Save solutions more elegantly
+6. Vary pruning parameter depending on the occasion (similar to 3).

@@ -32,7 +32,7 @@ private:
     void StripBad();
 
 public:
-    /* static constexpr const float playerMinAlive = 0.1f; */
+    static constexpr const float minAliveFrac = 0.1f;
 
     static const int incSteps = 4;
     static const int startSteps = 2*incSteps;

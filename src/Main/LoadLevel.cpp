@@ -1,5 +1,5 @@
 #include <HardestGame.h>
-#include "../../etc/Default.inl"
+#include "../../etc/DefaultExpert.inl"
 
 const LevelDscr& LevelDscr::Get()
 {
