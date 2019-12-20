@@ -1,17 +1,10 @@
 1. Use a heuristic for cross-over (maybe std::max(manh + DstToGoal))
 
-2. Fix node evaluation function (use DstFromStart)
-
 3. Fix natural selection algorithm. Prefer nodes that are sparse than tightly packed ones.
 
 4. Make a good mt implementation.
 
-5. Do something with locMin, maybe implement a Kamikaze method for more efficent pruning.
-
-6. Perform simmulated annealing to fix overfitting. When would be a good idea to restart the
-annealing?
-
-7. Vary pruning parameter depending on the occasion (similar to 3).
+6. Vary pruning parameter depending on the occasion (similar to 3).
 
 ---------------------------------------------------------------------------------------
 Outstanding:
@@ -22,4 +15,5 @@ Outstanding:
 
 3. Save solutions more elegantly
 
-4. PlannerUtlity.h
+4. Give bonus for new paths
+solves: (2.) Fix node evaluation function (use DstFromStart)

@@ -1,5 +1,5 @@
 #include "ParallelPlanner.h"
-#include "Prune.h"
+#include "Utility.h"
 
 #include <pthread.h>
 #include <algorithm>

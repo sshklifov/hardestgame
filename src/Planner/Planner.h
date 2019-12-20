@@ -72,7 +72,6 @@ public:
     bool IsDead() const;
     bool IsWinner() const;
     bool HasNoPlan() const;
-    bool InsideLocalMin() const;
 
     const std::vector<Direction> GetSolution() const;
     const IBox& GetLastPos() const;
@@ -93,9 +92,6 @@ public: // TODO
     std::vector<Direction> plan;
     std::vector<IPoint> lastpos;
     int dst;
-    mutable float stability = 1.0; // TODO
-    int locMin;
-    int staleFactor;
 };
 
 // circular include

@@ -1,5 +1,5 @@
 #include "Planner.h"
-#include "Prune.h"
+#include "Utility.h"
 
 #include <HardestGame.h>
 #include <Movement.h>
@@ -122,7 +122,7 @@ bool Planner::NextGen()
         return Bricked() || FoundSolution();
     }
 
-    Prune(players, gen);
+    Prune(players);
     StripBad();
 
     std::vector<PlayerInfo> children;
