@@ -16,7 +16,12 @@
 Outstanding:
 
 - Save solutions more elegantly
+- remove dst struct field from PlayerInfo. precompute fitness instead
 
 6. Vary pruning parameter depending on the occasion (similar to 3).
 
 11. Decaying boost (not outright removing it)
+
+12. Algorithm favoures kiling players (in most circumstances). Does this make sense?
+
+13. Create award function (avoid copy-pasting in GenChildren and NextGen)

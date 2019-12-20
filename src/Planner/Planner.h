@@ -44,11 +44,11 @@ public:
     static const int pixelsPerMove = playerSpeed*nRepeatMove;
 
     static const int pruneDistance = playerSize/2;
+    static_assert(pruneDistance < pixelsPerMove, "bad pruning");
 
 private:
     mutable std::default_random_engine gen;
     std::vector<PlayerInfo> players;
-    std::unique_ptr<std::vector<bool>[]> explored;
     int samples;
     int steps;
     int generation;
@@ -84,8 +84,6 @@ public:
     PlayerInfo Mutate(URNG& gen) const;
     void IncreaseStep(int n, URNG& gen);
 
-    void Award();
-    bool IsAwarded() const;
     int GetFitness() const;
 
 private:
@@ -97,10 +95,8 @@ public: // TODO (visualized in Main.cpp)
     std::vector<Direction> plan;
     std::vector<IPoint> lastpos;
     int dst;
-    bool awarded;
 
 public:
-    static const int awardBoost = Planner::pixelsPerMove*Planner::incSteps * 10;
     static const int deadPenalty = std::numeric_limits<int>::max() / 2;
     static_assert(std::is_same<decltype(dst),int>::value, "kofti");
 };

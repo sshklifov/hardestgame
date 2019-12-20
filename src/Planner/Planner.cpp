@@ -15,12 +15,6 @@
 Planner::Planner(int samples, int seed) :
     gen(seed), samples(samples), steps(startSteps), generation(1)
 {
-    explored.reset(new std::vector<bool>[width]);
-    for (int i = 0; i < width; ++i)
-    {
-        explored[i].resize(height, 0);
-    }
-
     int n = samples*2;
     players.reserve(n);
     for (int i = 0; i < n; ++i)
@@ -43,13 +37,6 @@ void Planner::GenChildren(std::vector<PlayerInfo>& children, int nChildren)
         int i = off % players.size();
         children[idx] = players[i].Mutate(gen);
         assert(!children[idx].HasNoPlan());
-
-        IPoint pos = GetCenter(children[idx].GetLastPos());
-        if (!explored[pos.x][pos.y])
-        {
-            children[idx].Award();
-            explored[pos.x][pos.y] = true;
-        }
 
         if (children[idx].IsWinner()) res = children[idx].GetSolution(); // TODO
         ++idx;
@@ -74,7 +61,12 @@ void Planner::Select()
         {
             return lhs.GetFitness() > rhs.GetFitness();
         });
-    auto it = std::partition_point(players.begin(), players.end(),
+    assert(std::is_partitioned(players.cbegin(), players.cend(),
+        [](const PlayerInfo& player)
+        {
+            return player.IsAlive();
+        }));
+    auto it = std::partition_point(players.cbegin(), players.cend(),
         [](const PlayerInfo& player)
         {
             return player.IsAlive();
@@ -119,10 +111,7 @@ bool Planner::Bricked() const
 
 bool Planner::NextGen()
 {
-    if (players.size()==0) return false; // TODO
     if (FoundSolution() || Bricked()) return true;
-
-    /* static int genChanges = 0; */
 
     if (generation >= genPerStepInc)
     {
@@ -137,8 +126,6 @@ bool Planner::NextGen()
         return Bricked() || FoundSolution();
     }
 
-    Select();
-
     std::vector<PlayerInfo> children;
     GenChildren(children, samples);
 
@@ -148,6 +135,9 @@ bool Planner::NextGen()
         assert(!children[i].HasNoPlan());
         players.push_back(std::move(children[i]));
     }
+    if (FoundSolution()) return FoundSolution();
+
+    Select();
     
     ++generation;
     return FoundSolution();

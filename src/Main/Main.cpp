@@ -105,7 +105,7 @@ void InteractiveLoop()
         DrawLevel(fb);
         planner.ForEachPlayer([](const PlayerInfo& player)
         {
-            /* DrawPlayer(fb, player.pos, player.IsDead() ? 0.3f : 1.0f); */
+            /* DrawPlayer(fb, player.pos, player.awarded>0 ? 1.f : 0.3f); */
             DrawPlayer(fb, player.GetLastPos(), player.IsAlive() ? 1.f : 0.3f);
         });
         for (const EnemyPath& e : LevelDscr::Get().enemies)

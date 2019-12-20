@@ -112,15 +112,6 @@ int DstToGoal(int x, int y)
     return dst[x][y];
 }
 
-int DstFromStart(int x, int y)
-{
-    static std::unique_ptr<std::vector<int>[]> dst
-        (CalculateDst(LevelDscr::Get().startIdx));
-
-    assert (x >= 0 && x < width && y>=0 && y<height);
-    return dst[x][y];
-}
-
 void Prune(std::vector<PlayerInfo>& players, int maxPruned)
 {
     if (maxPruned < 0) return;
@@ -159,5 +150,6 @@ void Prune(std::vector<PlayerInfo>& players, int maxPruned)
             if (maxPruned <= 0) break;
         }
     }
+
     players.erase(players.begin()+eraseAfter+1, players.end());
 }

@@ -71,7 +71,6 @@ PlayerInfo PlayerInfo::Inherit(std::vector<Direction> mutPlan, int mutIdx) const
     PlayerInfo chld;
     chld.dst = INT_MAX;
     chld.plan = std::move(mutPlan);
-    chld.awarded = false;
 
     if (mutIdx!=0)
     {
@@ -146,7 +145,7 @@ void PlayerInfo::Simulation()
     dst = DstToGoal(where.x, where.y);
 }
 
-PlayerInfo::PlayerInfo() : pos(-100, -100, -100, -100), dst(INT_MAX), awarded(false)
+PlayerInfo::PlayerInfo() : pos(-100, -100, -100, -100), dst(INT_MAX)
 {
     // try to render -> assert fail
 }
@@ -167,22 +166,10 @@ void PlayerInfo::IncreaseStep(int n, URNG& gen)
         plan[j] = RandomDirection(gen);
     }
 
-    awarded = false;
     Simulation();
-}
-
-void PlayerInfo::Award()
-{
-    assert(!HasNoPlan());
-    awarded = true;
-}
-
-bool PlayerInfo::IsAwarded() const
-{
-    return awarded;
 }
 
 int PlayerInfo::GetFitness() const
 {
-    return -dst + IsAwarded()*awardBoost - IsDead()*deadPenalty;
+    return -dst -IsDead()*deadPenalty;
 }
