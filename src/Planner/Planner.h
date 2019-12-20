@@ -9,6 +9,7 @@ class Planner;
 
 #include <climits>
 #include <random>
+#include <memory>
 
 class Planner
 {
@@ -31,13 +32,13 @@ private:
     void StripBad();
 
 public:
-    static constexpr const float playerMinAlive = 0.1f;
+    /* static constexpr const float playerMinAlive = 0.1f; */
 
     static const int incSteps = 4;
     static const int startSteps = 2*incSteps;
     static const int maxSteps = 200;
 
-    static const int genPerStepInc = 30;
+    static const int genPerStepInc = 50;
 
     static const int nRepeatMove = std::max(2, 20 / playerSpeed);
     static const int pixelsPerMove = playerSpeed*nRepeatMove;
@@ -45,6 +46,7 @@ public:
 private:
     mutable std::default_random_engine gen;
     std::vector<PlayerInfo> players;
+    std::unique_ptr<std::vector<bool>[]> explored;
     int samples;
     int steps;
     int generation;
@@ -79,19 +81,23 @@ public:
     PlayerInfo Mutate(URNG& gen) const;
     void IncreaseStep(int n, URNG& gen);
 
+    void Award();
+    bool IsAwarded() const;
+    int GetFitness() const;
+
 public:
-    static const int staleThreshold = 2*Planner::genPerStepInc;
-    static const int performLocMinCheck = 2*staleThreshold;
+    static const int awardBoost = Planner::pixelsPerMove*Planner::incSteps * 10;
 
 private:
     void Simulation();
     PlayerInfo Inherit(std::vector<Direction> plan, int changeIdx) const;
 
-public: // TODO
+public: // TODO (visualized in Main.cpp)
     IBox pos;
     std::vector<Direction> plan;
     std::vector<IPoint> lastpos;
     int dst;
+    bool awarded;
 };
 
 // circular include

@@ -6,6 +6,8 @@
 
 6. Vary pruning parameter depending on the occasion (similar to 3).
 
+7. Change explored in Planner to work on a block level (not pixel level)
+
 ---------------------------------------------------------------------------------------
 Outstanding:
 
@@ -14,6 +16,3 @@ Outstanding:
 2. Handle extreme cases (no alive players)
 
 3. Save solutions more elegantly
-
-4. Give bonus for new paths
-solves: (2.) Fix node evaluation function (use DstFromStart)

@@ -19,6 +19,7 @@ lvl.area.emplace_back(810, 854, 630, 674);
 lvl.area.emplace_back(945, 1034, 540, 629);
 lvl.area.emplace_back(405, 989, 45, 89);
 lvl.area.emplace_back(945, 989, 90, 134);
+lvl.area.emplace_back(675, 719, 630, 674);
 lvl.startIdx=2;
 lvl.endIdx=8;
 lvl.enemies.emplace_back(697, 472, 427, 472, Direction(2));

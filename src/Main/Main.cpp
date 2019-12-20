@@ -97,7 +97,7 @@ void InteractiveLoop()
 
     int rnd = time(NULL);
     // fixed
-    rnd = 1576017494;
+    /* rnd = 1576017494; */
     printf("seed:%d\n", rnd);
     Planner planner(samples, rnd);
     while(!glfwWindowShouldClose(window))
@@ -105,7 +105,8 @@ void InteractiveLoop()
         DrawLevel(fb);
         planner.ForEachPlayer([](const PlayerInfo& player)
         {
-            DrawPlayer(fb, player.pos, player.IsDead() ? 0.3f : 1.0f);
+            /* DrawPlayer(fb, player.pos, player.IsDead() ? 0.3f : 1.0f); */
+            DrawPlayer(fb, player.GetLastPos(), player.IsAwarded() ? 1.f : 0.3f);
         });
         for (const EnemyPath& e : LevelDscr::Get().enemies)
         {
