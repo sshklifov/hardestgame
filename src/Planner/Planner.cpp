@@ -19,126 +19,118 @@ Planner::Planner(int samples, int seed) :
     players.reserve(n);
     for (int i = 0; i < n; ++i)
     {
-        players.push_back(PlayerInfo(steps, gen));
+        players.emplace_back(steps, gen);
     }
 }
 
-void Planner::GenChildren(std::vector<PlayerInfo>& children, int nChildren)
+std::vector<PlayerInfo> Planner::Offspring(int nChildren)
 {
-    assert(!FoundSolution() && !Bricked());
+    assert(!FoundSolution() && !ExhaustedSearch());
 
-    std::shuffle(players.begin(), players.end(), gen);
-    children.clear();
-    children.resize(nChildren);
-
-    int idx = 0;
-    for (int off = 0; off < nChildren; ++off)
+    for (int i = 0; i < (int)players.size(); ++i)
     {
-        int i = off % players.size();
-        children[idx] = players[i].Mutate(gen);
-        assert(!children[idx].HasNoPlan());
-
-        if (children[idx].IsWinner()) res = children[idx].GetSolution(); // TODO
-        ++idx;
+        players[i].Mutate(gen);
     }
-
-    assert(idx==(int)children.size());
-}
-
-void Planner::Select()
-{
-    // Could be improved to 2 partial sorts + only one erase
-    // Commits up to 4341c43 did it this way. However, with small
-    // sample sizes, this does not make a lot of sense.
-
-    assert(!FoundSolution() && !Bricked());
-
-    Prune(players, players.size() - samples);
-    if ((int)players.size() <= samples) return;
 
     std::sort(players.begin(), players.end(),
         [](const PlayerInfo& lhs, const PlayerInfo& rhs)
         {
             return lhs.GetFitness() > rhs.GetFitness();
         });
-    assert(std::is_partitioned(players.cbegin(), players.cend(),
-        [](const PlayerInfo& player)
+
+    std::vector<PlayerInfo> children;
+    children.resize(nChildren);
+
+    int crossMaxIdx = crossoverTopPercent * samples;
+    assert(crossMaxIdx >= 5 && crossMaxIdx < samples);
+    for (int i = 0; i < nChildren; ++i)
+    {
+        int lhs = std::uniform_int_distribution<int>(0, crossMaxIdx)(gen);
+        int rhs = std::uniform_int_distribution<int>(0, crossMaxIdx)(gen);
+        if (lhs == rhs)
         {
-            return player.IsAlive();
-        }));
-    auto it = std::partition_point(players.cbegin(), players.cend(),
-        [](const PlayerInfo& player)
+            lhs = 0;
+            rhs = 1;
+        }
+        children[i] = players[lhs].Crossover(gen, players[rhs]);
+    }
+
+    return children;
+}
+
+void Planner::NatSelect()
+{
+    assert(!FoundSolution() && !ExhaustedSearch());
+
+    int toDelete = players.size() - samples;
+    assert(toDelete > 0);
+    toDelete -= Prune(players, toDelete);
+    if (toDelete <= 0) return;
+
+    std::partial_sort(players.rbegin(), players.rbegin()+toDelete, players.rend(),
+        [](const PlayerInfo& lhs, const PlayerInfo& rhs)
         {
-            return player.IsAlive();
+            return lhs.GetFitness() < rhs.GetFitness();
         });
-
-    int nAlive = it - players.begin();
-    int nDead = players.size()-nAlive;
-    int toDelete = players.size()-samples;
-
-    float rat = (float)samples / players.size();
-    int delAlive = Clamp(nAlive * (1.f-rat), 0.f, (float)nAlive);
-    if (nAlive-delAlive < minAliveFrac * players.size()) delAlive = 0;
-
-    int delDead = Clamp(toDelete-delAlive, 0, nDead);
-    assert(delAlive >= 0 && delDead >= 0);
-    assert(delAlive <= nAlive && delDead <= nDead);
-
-    players.erase(players.end()-delDead, players.end());
-
-    it = players.begin() + nAlive;
-    assert(it <= players.end());
-    players.erase(it-delAlive, it);
-
-    assert((int)players.size() >= samples-1 && (int)players.size() <= samples+1);
+    players.erase(players.end()-toDelete, players.end());
 }
 
-bool Planner::FoundSolution() const
+void Planner::NextGen()
 {
-    return !res.empty();
-}
-
-const std::vector<Direction>& Planner::SeeSolution() const
-{
-    assert(FoundSolution());
-    return res;
-}
-
-bool Planner::Bricked() const
-{
-    return steps > maxSteps && !FoundSolution();
-}
-
-bool Planner::NextGen()
-{
-    if (FoundSolution() || Bricked()) return true;
-
+    assert(!FoundSolution() && !ExhaustedSearch());
     if (generation >= genPerStepInc)
     {
         for (PlayerInfo& player : players)
         {
-            player.IncreaseStep(incSteps, gen);
-            if (player.IsWinner()) res = player.GetSolution(); // TODO
+            player.IncreaseStep(gen, incSteps);
         }
 
         steps += incSteps;
         generation = 1;
-        return Bricked() || FoundSolution();
+        return;
     }
 
-    std::vector<PlayerInfo> children;
-    GenChildren(children, samples);
+    std::vector<PlayerInfo> children = Offspring(samples * crossoverGrowth);
+    if ((int)players.size() > 2*samples) NatSelect();
 
-    players.reserve(players.size()+children.size());
     for (int i = 0; i < (int)children.size(); ++i)
     {
         assert(!children[i].HasNoPlan());
         players.push_back(std::move(children[i]));
     }
-    if (FoundSolution()) return FoundSolution();
 
-    Select();
-    
     ++generation;
-    return FoundSolution();
+}
+
+bool Planner::SearchForSolution()
+{
+    if (FoundSolution() || ExhaustedSearch()) return true;
+
+    NextGen();
+    for (const PlayerInfo& player : players)
+    {
+        if (player.IsWinner())
+        {
+            solutionPlan = player.GetSolution();
+            return true;
+        }
+    }
+
+    return ExhaustedSearch();
+}
+
+bool Planner::FoundSolution() const
+{
+    return !solutionPlan.empty();
+}
+
+bool Planner::ExhaustedSearch() const
+{
+    return steps>maxSteps && !FoundSolution();
+}
+
+const std::vector<Direction>& Planner::GetSolution() const
+{
+    assert(FoundSolution());
+    return solutionPlan;
 }

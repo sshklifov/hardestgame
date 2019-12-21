@@ -112,20 +112,27 @@ int DstToGoal(int x, int y)
     return dst[x][y];
 }
 
-void Prune(std::vector<PlayerInfo>& players, int maxPruned)
+int DstFromStart(int x, int y)
 {
-    if (maxPruned < 0) return;
+    static std::unique_ptr<std::vector<int>[]> dst
+        (CalculateDst(LevelDscr::Get().startIdx));
+
+    assert (x >= 0 && x < width && y>=0 && y<height);
+    return dst[x][y];
+}
+
+int Prune(std::vector<PlayerInfo>& players, int maxPruned)
+{
+    assert(maxPruned > 0);
      
-    std::sort(players.begin(), players.end(),
+    assert(std::is_sorted(players.begin(), players.end(),
         [](const PlayerInfo& lhs, const PlayerInfo& rhs)
         {
             return lhs.GetFitness() > rhs.GetFitness();
-        });
-
-    // for a few samples n^2 is as good as a sliding window solution
-    // also, points are not guaranteed to be sparse.
+        }));
 
     int eraseAfter = players.size()-1;
+    int nPruned = 0;
     for (int i = players.size()-1; i >= 1; --i)
     {
         bool shouldRemove = false;
@@ -146,10 +153,12 @@ void Prune(std::vector<PlayerInfo>& players, int maxPruned)
             std::swap(players[i], players[eraseAfter]);
             --eraseAfter;
 
-            --maxPruned;
-            if (maxPruned <= 0) break;
+            ++nPruned;
+            if (nPruned >= maxPruned) break;
         }
     }
 
+    assert((int)players.size() - eraseAfter - 1 == nPruned);
     players.erase(players.begin()+eraseAfter+1, players.end());
+    return nPruned;
 }

@@ -4,7 +4,6 @@
 #include <Draw.h>
 
 #include <Planner.h>
-#include <ParallelPlanner.h>
 
 #include <cstdio>
 #include <ctime>
@@ -14,20 +13,20 @@
 // LevelEditor.cpp
 extern void LevelEditor();
 
-const int samples = 200;
+const int samples = 500;
 const int threads = 5;
 
 static GLFWwindow* window;
 static Color* fb;
 
-static int doDraw = 0;
+static int draw = 0;
 static int freeze = 0;
 static int cont = 0;
 void KeyCallback(GLFWwindow*, int key, int, int action, int)
 {
     if (key == GLFW_KEY_G && action == GLFW_PRESS)
     {
-        doDraw ^= 1;
+        draw ^= 1;
     }
     if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
     {
@@ -61,13 +60,12 @@ void ShowPlan(const std::vector<Direction>& plan)
     size_t idx = 0;
 
     IBox player = LevelDscr::Get().player;
-    bool dead = false;
     std::vector<EnemyPath> enemies = LevelDscr::Get().enemies;
 
-    while (idx<plan.size() && !dead && doDraw && !glfwWindowShouldClose(window))
+    while (idx<plan.size() && draw && !glfwWindowShouldClose(window))
     {
         DrawLevel(fb);
-        DrawPlayer(fb, player, dead ? 0.f : 1.f);
+        DrawPlayer(fb, player);
         for (const EnemyPath& e : enemies)
         {
             DrawEnemy(fb, e.pos);
@@ -75,15 +73,19 @@ void ShowPlan(const std::vector<Direction>& plan)
         SwapBuffers(window, (float*)fb);
         glfwPollEvents();
 
-        if (!dead) AdvancePlayer(player, plan[idx]);
+        AdvancePlayer(player, plan[idx]);
         for (EnemyPath& e : enemies)
         {
             AdvanceEnemy(e);
-            if (PlayerDies(player, e.pos)) dead=true;
+            if (PlayerDies(player, e.pos)) break;
         }
 
-        idx += (rep+1) / Planner::nRepeatMove;
-        rep = (rep+1) % Planner::nRepeatMove;
+        ++rep;
+        if (rep == Planner::nRepeatMove)
+        {
+            rep = 0;
+            ++idx;
+        }
     }
 }
 
@@ -96,8 +98,6 @@ void InteractiveLoop()
     InitializeGL();
 
     int rnd = time(NULL);
-    // fixed
-    /* rnd = 1576017494; */
     printf("seed:%d\n", rnd);
     Planner planner(samples, rnd);
     while(!glfwWindowShouldClose(window))
@@ -105,7 +105,6 @@ void InteractiveLoop()
         DrawLevel(fb);
         planner.ForEachPlayer([](const PlayerInfo& player)
         {
-            /* DrawPlayer(fb, player.pos, player.awarded>0 ? 1.f : 0.3f); */
             DrawPlayer(fb, player.GetLastPos(), player.IsAlive() ? 1.f : 0.3f);
         });
         for (const EnemyPath& e : LevelDscr::Get().enemies)
@@ -114,123 +113,124 @@ void InteractiveLoop()
         }
 
         SwapBuffers(window, (float*)fb);
-        glfwWaitEvents();
-        if (!freeze)
-        {
-            if (planner.NextGen()) break;
-        }
 
-        if (doDraw)
+        glfwWaitEvents();
+        if (!freeze && planner.SearchForSolution())
         {
-            int bestDst = INT_MAX;
-            std::vector<Direction> bestPlan;
-            planner.ForEachPlayer([&bestDst, &bestPlan](const PlayerInfo& player)
-            {
-                if (player.dst < bestDst)
-                {
-                    bestDst = player.dst;
-                    bestPlan = player.plan;
-                }
-            });
-            ShowPlan(bestPlan);
-            doDraw = false;
+            break;
+        }
+        if (draw)
+        {
+            /* int bestFitness = INT_MIN; */
+            /* std::vector<Direction> bestPlan; */
+            /* planner.ForEachPlayer([&bestFitness, &bestPlan](const PlayerInfo& player) */
+            /* { */
+            /*     if (player.GetFitness() > bestFitness) */
+            /*     { */
+            /*         bestFitness = player.GetFitness(); */
+            /*         bestPlan = player.plan; */
+            /*     } */
+            /* }); */
+            /* ShowPlan(bestPlan); */
+            /* draw = false; */
         }
         if (clicked)
         {
-            std::vector<Direction> plan;
-            planner.ForEachPlayer([&plan](const PlayerInfo& player)
-            {
-                if (plan.empty() &&
-                    player.pos.xmin <= xclick && player.pos.xmax >= xclick &&
-                    player.pos.ymin <= yclick && player.pos.ymax >= yclick)
-                {
-                    plan = player.plan;
-                }
-            });
-            doDraw = true;
-            ShowPlan(plan);
-            doDraw = false;
-            clicked = false;
+            /* std::vector<Direction> plan; */
+            /* planner.ForEachPlayer([&plan](const PlayerInfo& player) */
+            /* { */
+            /*     if (plan.empty() && */
+            /*         player.pos.xmin <= xclick && player.pos.xmax >= xclick && */
+            /*         player.pos.ymin <= yclick && player.pos.ymax >= yclick) */
+            /*     { */
+            /*         plan = player.plan; */
+            /*     } */
+            /* }); */
+            /* draw = true; */
+            /* ShowPlan(plan); */
+            /* draw = false; */
+            /* clicked = false; */
         }
         if (cont)
         {
             clock_t then = clock();
-            while (!planner.NextGen());
-            int elapsed = clock()-then;
+            while (!planner.SearchForSolution());
+            clock_t elapsed = clock()-then;
+
             double secs = (double)elapsed / CLOCKS_PER_SEC;
             printf("%lf secs elapsed (single core)\n", secs);
-            
+
             break;
         }
     }
 
     if (planner.FoundSolution())
     {
-        int siz = planner.SeeSolution().size() * Planner::pixelsPerMove;
+        int siz = planner.GetSolution().size() * Planner::pixelsPerMove;
         printf("solution length (in pixels): %d\n", siz);
 
-        doDraw = true;
-        while(!glfwWindowShouldClose(window) && doDraw)
+        draw = true;
+        while(!glfwWindowShouldClose(window) && draw)
         {
-            ShowPlan(planner.SeeSolution());
+            ShowPlan(planner.GetSolution());
         }
     }
     else
     {
-        assert(planner.Bricked());
+        assert(planner.ExhaustedSearch());
         fprintf(stderr, "No solution found\n");
     }
 }
 
-void FindSolutionParallel()
-{
-    fprintf(stderr, "regular planner not finished!\n");
-    exit(1);
+/* void FindSolutionParallel() */
+/* { */
+/*     fprintf(stderr, "regular planner not finished!\n"); */
+/*     exit(1); */
 
-    clock_t then = clock();
+/*     clock_t then = clock(); */
 
-    int rnd[threads+1];
+/*     int rnd[threads+1]; */
 
-    FILE* fp = fopen("/dev/random", "r");
-    assert(fp);
-    int s = fread(&rnd, sizeof(int), threads+1, fp);
-    assert(s == threads+1);
-    fclose(fp);
+/*     FILE* fp = fopen("/dev/random", "r"); */
+/*     assert(fp); */
+/*     int s = fread(&rnd, sizeof(int), threads+1, fp); */
+/*     assert(s == threads+1); */
+/*     fclose(fp); */
 
-    ParallelPlanner planner(samples, threads, rnd);
-    while (!planner.NewGen());
+/*     ParallelPlanner planner(samples, threads, rnd); */
+/*     while (!planner.NewGen()); */
 
-    if (planner.FoundSol())
-    {
-        int siz = planner.SeeSol().size() * Planner::pixelsPerMove;
-        printf("solution length (in pixels): %d\n", siz);
+/*     if (planner.FoundSol()) */
+/*     { */
+/*         int siz = planner.SeeSol().size() * Planner::pixelsPerMove; */
+/*         printf("solution length (in pixels): %d\n", siz); */
 
-        int elapsed = clock()-then;
-        double secs = (double)elapsed / CLOCKS_PER_SEC;
-        printf("%lf secs elapsed per thread\n", secs/threads);
+/*         int elapsed = clock()-then; */
+/*         double secs = (double)elapsed / CLOCKS_PER_SEC; */
+/*         printf("%lf secs elapsed per thread\n", secs/threads); */
 
-        printf("show solution (y for yes): ");
-        char buf[128];
-        scanf("%s", buf);
-        if (strcmp(buf, "y") == 0)
-        {
-            window = InitializeGLFW(width, height);
-            fb = (Color*)glfwGetWindowUserPointer(window);
-            InitializeGL();
+/*         printf("show solution (y for yes): "); */
+/*         char buf[128]; */
+/*         scanf("%s", buf); */
+/*         if (strcmp(buf, "y") == 0) */
+/*         { */
+/*             window = InitializeGLFW(width, height); */
+/*             fb = (Color*)glfwGetWindowUserPointer(window); */
+/*             InitializeGL(); */
 
-            doDraw = true;
-            while(!glfwWindowShouldClose(window) && doDraw)
-            {
-                ShowPlan(planner.SeeSol());
-            }
-        }
-    }
-    else
-    {
-        assert(planner.Bricked());
-        fprintf(stderr, "No solution found\n");
-    }
-}
+/*             doDraw = true; */
+/*             while(!glfwWindowShouldClose(window) && doDraw) */
+/*             { */
+/*                 ShowPlan(planner.SeeSol()); */
+/*             } */
+/*         } */
+/*     } */
+/*     else */
+/*     { */
+/*         assert(planner.Bricked()); */
+/*         fprintf(stderr, "No solution found\n"); */
+/*     } */
+/* } */
 
 int main(int argc, char** argv)
 {
@@ -241,7 +241,7 @@ int main(int argc, char** argv)
     }
     if (argc == 2 && strcmp(argv[1], "p") == 0)
     {
-        FindSolutionParallel();
+        /* FindSolutionParallel(); */
         return 0;
     }
     if (argc == 2 && strcmp(argv[1], "e") == 0)

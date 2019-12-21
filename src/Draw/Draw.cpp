@@ -1,14 +1,9 @@
 #include <HardestGame.h>
 #include "Draw.h"
+#include "Movement.h" // Clamp
 
 #include <cassert>
 #include <cmath>
-
-template <typename T>
-T Clamp(T x, T minVal, T maxVal)
-{
-    return std::max(minVal, std::min(maxVal, x));
-}
 
 static float SmoothStep(float edge0, float edge1, float x)
 {

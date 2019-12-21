@@ -26,6 +26,9 @@ if [ "$1" == "c" ]; then
         cd ..
     done
     make -f ../GNUmakefile clean
+    echo "removing ../include and ../lib"
+    rm -rf ../include
+    rm -rf ../lib
     exit
 fi
 
