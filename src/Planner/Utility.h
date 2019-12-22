@@ -11,6 +11,6 @@ extern IPoint GetCenter(const IBox& b);
 
 extern int DstToGoal(int x, int y);
 extern int DstFromStart(int x, int y);
-extern int Prune(std::vector<PlayerInfo>& players, int maxPruned);
+extern void NatSelect(std::vector<PlayerInfo>& players, int toDelete);
 
 #endif

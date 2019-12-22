@@ -121,7 +121,7 @@ int DstFromStart(int x, int y)
     return dst[x][y];
 }
 
-int Prune(std::vector<PlayerInfo>& players, int maxPruned)
+static int Prune(std::vector<PlayerInfo>& players, int maxPruned)
 {
     assert(maxPruned > 0);
      
@@ -161,4 +161,19 @@ int Prune(std::vector<PlayerInfo>& players, int maxPruned)
     assert((int)players.size() - eraseAfter - 1 == nPruned);
     players.erase(players.begin()+eraseAfter+1, players.end());
     return nPruned;
+}
+
+void NatSelect(std::vector<PlayerInfo>& players, int toDelete)
+{
+    assert(toDelete > 0 && toDelete < (int)players.size());
+
+    toDelete -= Prune(players, toDelete);
+    if (toDelete <= 0) return;
+
+    std::partial_sort(players.rbegin(), players.rbegin()+toDelete, players.rend(),
+        [](const PlayerInfo& lhs, const PlayerInfo& rhs)
+        {
+            return lhs.GetFitness() < rhs.GetFitness();
+        });
+    players.erase(players.end()-toDelete, players.end());
 }

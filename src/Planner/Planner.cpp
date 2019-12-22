@@ -15,9 +15,8 @@
 Planner::Planner(int samples, int seed) :
     gen(seed), samples(samples), steps(startSteps), generation(1)
 {
-    int n = samples*2;
-    players.reserve(n);
-    for (int i = 0; i < n; ++i)
+    players.reserve(samples);
+    for (int i = 0; i < samples; ++i)
     {
         players.emplace_back(steps, gen);
     }
@@ -58,23 +57,6 @@ std::vector<PlayerInfo> Planner::Offspring(int nChildren)
     return children;
 }
 
-void Planner::NatSelect()
-{
-    assert(!FoundSolution() && !ExhaustedSearch());
-
-    int toDelete = players.size() - samples;
-    assert(toDelete > 0);
-    toDelete -= Prune(players, toDelete);
-    if (toDelete <= 0) return;
-
-    std::partial_sort(players.rbegin(), players.rbegin()+toDelete, players.rend(),
-        [](const PlayerInfo& lhs, const PlayerInfo& rhs)
-        {
-            return lhs.GetFitness() < rhs.GetFitness();
-        });
-    players.erase(players.end()-toDelete, players.end());
-}
-
 void Planner::NextGen()
 {
     assert(!FoundSolution() && !ExhaustedSearch());
@@ -91,7 +73,7 @@ void Planner::NextGen()
     }
 
     std::vector<PlayerInfo> children = Offspring(samples * crossoverGrowth);
-    if ((int)players.size() > 2*samples) NatSelect();
+    if ((int)players.size() > 2*samples) NatSelect(players, players.size()-samples);
 
     for (int i = 0; i < (int)children.size(); ++i)
     {

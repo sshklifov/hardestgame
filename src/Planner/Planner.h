@@ -1,15 +1,14 @@
 #ifndef PLANNER_INCLUDED
 #define PLANNER_INCLUDED
 
-class PlayerInfo;
-class Planner;
-
 #include <HardestGame.h>
 #include <Draw.h>
 
 #include <climits>
 #include <random>
 #include <memory>
+
+class PlayerInfo;
 
 class Planner
 {
@@ -28,9 +27,8 @@ public:
     void ForEachPlayer(const Func& f) const;
 
 private:
-    void NextGen();
     std::vector<PlayerInfo> Offspring(int nChildren);
-    void NatSelect();
+    void NextGen();
 
 public:
     static const int incSteps = 4;
@@ -95,7 +93,7 @@ private:
             std::vector<Direction> plan, int changeIdx);
     void Simulation();
 
-private:
+private: // change here to unlock interaction
     IBox pos;
     std::vector<Direction> plan;
     std::vector<IPoint> lastpos;

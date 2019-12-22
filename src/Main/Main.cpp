@@ -4,6 +4,7 @@
 #include <Draw.h>
 
 #include <Planner.h>
+#include <ParallelPlanner.h>
 
 #include <cstdio>
 #include <ctime>
@@ -121,6 +122,7 @@ void InteractiveLoop()
         }
         if (draw)
         {
+            // Change PlayerInfo members to public
             /* int bestFitness = INT_MIN; */
             /* std::vector<Direction> bestPlan; */
             /* planner.ForEachPlayer([&bestFitness, &bestPlan](const PlayerInfo& player) */
@@ -136,6 +138,7 @@ void InteractiveLoop()
         }
         if (clicked)
         {
+            // Change PlayerInfo members to public
             /* std::vector<Direction> plan; */
             /* planner.ForEachPlayer([&plan](const PlayerInfo& player) */
             /* { */
@@ -182,55 +185,49 @@ void InteractiveLoop()
     }
 }
 
-/* void FindSolutionParallel() */
-/* { */
-/*     fprintf(stderr, "regular planner not finished!\n"); */
-/*     exit(1); */
+void FindSolutionParallel()
+{
+    int rnd[threads+1];
 
-/*     clock_t then = clock(); */
+    FILE* fp = fopen("/dev/random", "r");
+    assert(fp);
+    int s = fread(&rnd, sizeof(int), threads+1, fp);
+    assert(s == threads+1);
+    fclose(fp);
 
-/*     int rnd[threads+1]; */
+    ParallelPlanner planner(samples, threads, rnd);
+    time_t now = time(NULL);
+    while (!planner.SearchForSolution());
+    time_t elapsed = time(NULL) - now;
+    printf("%ld secs elapsed\n", elapsed);
 
-/*     FILE* fp = fopen("/dev/random", "r"); */
-/*     assert(fp); */
-/*     int s = fread(&rnd, sizeof(int), threads+1, fp); */
-/*     assert(s == threads+1); */
-/*     fclose(fp); */
+    if (planner.FoundSolution())
+    {
+        int siz = planner.GetSolution().size() * Planner::pixelsPerMove;
+        printf("solution length (in pixels): %d\n", siz);
 
-/*     ParallelPlanner planner(samples, threads, rnd); */
-/*     while (!planner.NewGen()); */
+        printf("show solution (y for yes): ");
+        char buf[8];
+        scanf("%8s", buf);
+        if (strcmp(buf, "y") == 0)
+        {
+            window = InitializeGLFW(width, height);
+            fb = (Color*)glfwGetWindowUserPointer(window);
+            InitializeGL();
 
-/*     if (planner.FoundSol()) */
-/*     { */
-/*         int siz = planner.SeeSol().size() * Planner::pixelsPerMove; */
-/*         printf("solution length (in pixels): %d\n", siz); */
-
-/*         int elapsed = clock()-then; */
-/*         double secs = (double)elapsed / CLOCKS_PER_SEC; */
-/*         printf("%lf secs elapsed per thread\n", secs/threads); */
-
-/*         printf("show solution (y for yes): "); */
-/*         char buf[128]; */
-/*         scanf("%s", buf); */
-/*         if (strcmp(buf, "y") == 0) */
-/*         { */
-/*             window = InitializeGLFW(width, height); */
-/*             fb = (Color*)glfwGetWindowUserPointer(window); */
-/*             InitializeGL(); */
-
-/*             doDraw = true; */
-/*             while(!glfwWindowShouldClose(window) && doDraw) */
-/*             { */
-/*                 ShowPlan(planner.SeeSol()); */
-/*             } */
-/*         } */
-/*     } */
-/*     else */
-/*     { */
-/*         assert(planner.Bricked()); */
-/*         fprintf(stderr, "No solution found\n"); */
-/*     } */
-/* } */
+            draw = true;
+            while(!glfwWindowShouldClose(window) && draw)
+            {
+                ShowPlan(planner.GetSolution());
+            }
+        }
+    }
+    else
+    {
+        assert(planner.ExhaustedSearch());
+        fprintf(stderr, "No solution found\n");
+    }
+}
 
 int main(int argc, char** argv)
 {
@@ -241,7 +238,7 @@ int main(int argc, char** argv)
     }
     if (argc == 2 && strcmp(argv[1], "p") == 0)
     {
-        /* FindSolutionParallel(); */
+        FindSolutionParallel();
         return 0;
     }
     if (argc == 2 && strcmp(argv[1], "e") == 0)
