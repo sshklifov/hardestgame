@@ -107,6 +107,7 @@ void InteractiveLoop()
         planner.ForEachPlayer([](const PlayerInfo& player)
         {
             DrawPlayer(fb, player.GetLastPos(), player.IsAlive() ? 1.f : 0.3f);
+            /* DrawPlayer(fb, player.GetLastPos(), player.stability); */
         });
         for (const EnemyPath& e : LevelDscr::Get().enemies)
         {

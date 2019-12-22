@@ -101,12 +101,12 @@ private: // change here to unlock interaction
     int fitness;
 
 private:
-    static constexpr const float incStability = 0.01f;
+    static constexpr const float incStability = 0.005f;
     static constexpr const float minStability = 0.01f;
     static constexpr const float maxStability = 0.99f;
 
     static const int deadPenalty = INT_MIN / 2;
-    static const int crossoverBacktrack = 10;
+    static const int crossoverBacktrack = Planner::maxSteps;
 };
 
 #endif

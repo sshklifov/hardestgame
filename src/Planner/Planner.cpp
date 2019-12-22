@@ -31,6 +31,7 @@ std::vector<PlayerInfo> Planner::Offspring(int nChildren)
         players[i].Mutate(gen);
     }
 
+    std::shuffle(players.begin(), players.end(), gen);
     std::sort(players.begin(), players.end(),
         [](const PlayerInfo& lhs, const PlayerInfo& rhs)
         {
