@@ -156,7 +156,7 @@ bool ParallelPlanner::SearchForSolution()
         }
     }
 
-    int toDelete = playerPoo.size() - nthreads*samples/2;
+    int toDelete = playerPool.size() - nthreads*samples/2;
     std::sort(playerPool.begin(), playerPool.end(),
         [](const PlayerInfo& lhs, const PlayerInfo& rhs)
         {
